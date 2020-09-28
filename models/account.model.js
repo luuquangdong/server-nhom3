@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// tạo khung cho account
 const accountSchema = new mongoose.Schema({
 	name: String,
 	password: String,
@@ -7,6 +8,7 @@ const accountSchema = new mongoose.Schema({
 	linkAvatar: String
 });
 
+// tạo model 
 var Account = mongoose.model('Account', accountSchema);
 
 module.exports = Account;
