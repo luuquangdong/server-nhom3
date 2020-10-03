@@ -2,13 +2,45 @@ const router = require('express').Router();
 const Account = require('../models/account.model');
 const VerifyCode = require('../models/verifycode.model');
 
+router.post('/login', async (req, resp) => {
+	let phoneNumber = req.body.phonenumber;
+	let password = req.body.password;
+	let account = await Account.find({phoneNumber: phoneNumber, password: password});
+	console.log(account);
+
+	// khong co nguoi dung nay
+	if (account.length == 0){
+		resp.json({
+			code: 9995,
+			message: 'User is not validated'
+		});
+		return;
+	} else {
+		//Dung password va phonenumber
+		let token =  generateVerifyCode();
+		const res = await Account.updateOne({ phoneNumber: phoneNumber }, { token: token } );
+		console.log(res);
+		resp.json({
+			code: 1000,
+			message: 'OK',
+			data: {
+				id: account[0].id ,
+				username: account[0].username,
+				token: token,
+				avatar: account[0].avatar,
+			}
+		});
+	}
+});
+
 router.post('/signup', async (req, resp) => {
 	// lấy phoneNumber truyền từ client
 	let phoneNumber = req.body.phonenumber;
 
 	// tìm tài khoản ứng với số điện thoại vừa lấy đk
+	console.log(req.body);
 	let account = await Account.find({phoneNumber: phoneNumber});
-	
+
 	if(account.length == 0){ // tài khoản chửa tồn tại
 		// thêm tài khoản vào database
 		await new Account({phoneNumber: phoneNumber,
