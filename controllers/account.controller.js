@@ -1,4 +1,7 @@
 const router = require('express').Router();
+
+const jwt = require('jsonwebtoken');
+
 const Account = require('../models/account.model');
 const VerifyCode = require('../models/verifycode.model');
 
@@ -17,7 +20,10 @@ router.post('/login', async (req, resp) => {
 		return;
 	} else {
 		//Dung password va phonenumber
-		let token =  generateVerifyCode();
+		let token = jwt.sign({
+			phoneNumber: phoneNumber,
+			deviceId: req.body.deviceId
+		}, 'it4895');
 		const res = await Account.updateOne({ phoneNumber: phoneNumber }, { token: token } );
 		console.log(res);
 		resp.json({
