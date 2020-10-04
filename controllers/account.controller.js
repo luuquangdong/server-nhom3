@@ -9,7 +9,7 @@ router.post('/login', async (req, resp) => {
 	let phoneNumber = req.body.phonenumber;
 	let password = req.body.password;
 	let account = await Account.find({phoneNumber: phoneNumber, password: password});
-	console.log(account);
+	//console.log(account);
 
 	// khong co nguoi dung nay
 	if (account.length == 0){
@@ -25,7 +25,7 @@ router.post('/login', async (req, resp) => {
 			deviceId: req.body.deviceId
 		}, 'it4895');
 		const res = await Account.updateOne({ phoneNumber: phoneNumber }, { token: token } );
-		console.log(res);
+	//	console.log(res);
 		resp.json({
 			code: 1000,
 			message: 'OK',
@@ -73,6 +73,25 @@ router.post('/signup', async (req, resp) => {
 			message: "User existed"
 		});
 	}
+});
+
+router.post('/logout', async (req, resp)=>{
+	let token = req.body.token;
+	let account = await Account.findOne({token: token});
+	if(account === null){
+		resp.json({
+			code: 9998,
+			message: "token is invalid"
+		});
+		return;
+	}
+	account.token = undefined;
+	console.log(account);
+	account.save();
+	resp.json({
+		code: 1000,
+		message: "OK"
+	});
 });
 
 function generateVerifyCode(){
