@@ -19,7 +19,7 @@ router.post('/login', async (req, resp) => {
 	} else {
 		//Dung password va phonenumber
 		let token = jwt.sign({
-			accountId: account._id,
+			userId: account._id,
 			phoneNumber: phoneNumber,
 			deviceId: req.body.deviceId
 		}, 'it4895');
@@ -30,7 +30,7 @@ router.post('/login', async (req, resp) => {
 			code: 1000,
 			message: 'OK',
 			data: {
-				id: account.id ,
+				id: account._id,
 				username: account.username,
 				token: token,
 				avatar: account.avatar,
@@ -42,7 +42,6 @@ router.post('/login', async (req, resp) => {
 router.post('/signup', async (req, resp) => {
 	// lấy phoneNumber truyền từ client
 	let phoneNumber = req.body.phonenumber;
-
 	// tìm tài khoản ứng với số điện thoại vừa lấy đk
 	console.log(req.body);
 	let account = await Account.find({phoneNumber: phoneNumber});
@@ -76,22 +75,28 @@ router.post('/signup', async (req, resp) => {
 });
 
 router.post('/logout', async (req, resp)=>{
-	let token = req.body.token;
-	let account = await Account.findOne({token: token});
-	if(account === null){
+	try{
+		let data = jwt.verify(req.body.token, 'it4895');
+		let account = await Account.findOne({_id: data.userId});
+		if(account === null){
+			resp.json({
+				code: 9998,
+				message: "token is invalid"
+			});
+			return;
+		}
+		account.online = false;
+		account.save();
+		resp.json({
+			code: 1000,
+			message: "OK"
+		});
+	}catch(err){
 		resp.json({
 			code: 9998,
 			message: "token is invalid"
 		});
-		return;
 	}
-	account.token = undefined;
-	console.log(account);
-	account.save();
-	resp.json({
-		code: 1000,
-		message: "OK"
-	});
 });
 
 function generateVerifyCode(){
