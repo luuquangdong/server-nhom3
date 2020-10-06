@@ -86,7 +86,7 @@ router.post('/logout', async (req, resp)=>{
 			return;
 		}
 		account.online = false;
-		account.save();
+		await account.save();
 		resp.json({
 			code: 1000,
 			message: "OK"
@@ -97,6 +97,44 @@ router.post('/logout', async (req, resp)=>{
 			message: "token is invalid"
 		});
 	}
+});
+
+router.post('/get_verify_code', async (req, resp) => {
+	let account = await Account.findOne({phoneNumber: req.body.phonenumber});
+	if(account == null){ // người dùng chưa đăng ký
+		resp.json({
+			code: 9995,
+			message: "User is not validated"
+		});
+		return;
+	}
+	if(account.active){ // người dùng đã active
+		resp.json({
+			code: 1010,
+			message: "Action has been done previously by this user"
+		});
+		return;
+	}
+	let verify = await VerifyCode.findOne({phoneNumber: req.body.phonenumber});
+	if(verify.limitedTime){
+		// xử lý limited time
+		let milsec = verify.lastUpdate.getTime();
+		if(Date.now() - milsec < 120000){
+			resp.json({
+				code: 1009,
+				message: "Not access"
+			});
+			return;
+		}
+	}
+	verify.code.push(generateVerifyCode());
+	verify.lastUpdate = Date.now();
+	verify.limitedTime = true;
+	await verify.save();
+	resp.json({
+		code: 1000,
+		message: "OK"
+	});
 });
 
 function generateVerifyCode(){
