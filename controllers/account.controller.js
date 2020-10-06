@@ -8,11 +8,9 @@ const VerifyCode = require('../models/verifycode.model');
 router.post('/login', async (req, resp) => {
 	let phoneNumber = req.body.phonenumber;
 	let password = req.body.password;
-	let account = await Account.find({phoneNumber: phoneNumber, password: password});
-	//console.log(account);
-
+	let account = await Account.findOne({phoneNumber: phoneNumber, password: password});
 	// khong co nguoi dung nay
-	if (account.length == 0){
+	if (account == null){
 		resp.json({
 			code: 9995,
 			message: 'User is not validated'
@@ -21,19 +19,21 @@ router.post('/login', async (req, resp) => {
 	} else {
 		//Dung password va phonenumber
 		let token = jwt.sign({
+			accountId: account._id,
 			phoneNumber: phoneNumber,
 			deviceId: req.body.deviceId
 		}, 'it4895');
-		const res = await Account.updateOne({ phoneNumber: phoneNumber }, { token: token } );
-	//	console.log(res);
+//		const res = await Account.updateOne({ phoneNumber: phoneNumber }, { token: token } );
+		account.online = true;
+		account.save();
 		resp.json({
 			code: 1000,
 			message: 'OK',
 			data: {
-				id: account[0].id ,
-				username: account[0].username,
+				id: account.id ,
+				username: account.username,
 				token: token,
-				avatar: account[0].avatar,
+				avatar: account.avatar,
 			}
 		});
 	}
