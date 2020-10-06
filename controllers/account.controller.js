@@ -149,7 +149,7 @@ router.post('/check_verify_code', async (req, resp) => {
 		return;
 	}
 	let verifyCode = await VerifyCode.findOne({phoneNumber: req.body.phonenumber});
-	console.log(verifyCode);
+//	console.log(verifyCode);
 	if(verifyCode == null){ // người dùng đã active
 			resp.json({
 				code: 1010,
