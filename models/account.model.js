@@ -7,7 +7,6 @@ const accountSchema = new mongoose.Schema({
 	phoneNumber: String,
 	linkAvatar: String,
 	online: Boolean,
-	active: Boolean
 });
 
 // tạo model
