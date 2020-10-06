@@ -108,14 +108,16 @@ router.post('/get_verify_code', async (req, resp) => {
 		});
 		return;
 	}
-	if(account.active){ // người dùng đã active
+
+	let verify = await VerifyCode.findOne({phoneNumber: req.body.phonenumber});
+	if(verify == null){ // người dùng đã active
 		resp.json({
 			code: 1010,
 			message: "Action has been done previously by this user"
 		});
 		return;
 	}
-	let verify = await VerifyCode.findOne({phoneNumber: req.body.phonenumber});
+
 	if(verify.limitedTime){
 		// xử lý limited time
 		let milsec = verify.lastUpdate.getTime();
@@ -135,6 +137,39 @@ router.post('/get_verify_code', async (req, resp) => {
 		code: 1000,
 		message: "OK"
 	});
+});
+
+router.post('/check_verify_code', async (req, resp) => {
+	let account = await Account.findOne({phoneNumber: req.body.phonenumber});
+	if(account == null){
+		resp.json({
+			code: 9995,
+			message: 'User is not existed'
+		});
+		return;
+	}
+	let verifyCode = await VerifyCode.findOne({phoneNumber: req.body.phonenumber});
+	console.log(verifyCode);
+	if(verifyCode == null){ // người dùng đã active
+			resp.json({
+				code: 1010,
+				message: "Action has been done previously by this user"
+			});
+			return;
+	}
+	let dung = verifyCode.code.find(item => item === req.body.code_verify);
+	if(dung){ // đúng code_verify
+		resp.json({
+			code: 1000,
+			message: "OK"
+		});
+		verifyCode.deleteOne();
+	}else{ // sai code_verify
+		resp.json({
+			code: 9993,
+			message: "Code verify is incorrect"
+		});
+	}
 });
 
 function generateVerifyCode(){
