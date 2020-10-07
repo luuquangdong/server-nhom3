@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 8888;
 
+//load biến môi trường từ file .env
+require('dotenv').config();
+
 // connect db
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/fake-facebook', {useNewUrlParser: true, useUnifiedTopology: true});
