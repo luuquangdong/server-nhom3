@@ -7,11 +7,13 @@ const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/fake-facebook', {useNewUrlParser: true, useUnifiedTopology: true});
 
 const accountController = require('./controllers/account.controller');
+const postController = require('./controllers/post.controller');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/', accountController);
+app.use('/', postController);
 
 app.get('/', (req, resp) => {
 	resp.send("Hello World");
