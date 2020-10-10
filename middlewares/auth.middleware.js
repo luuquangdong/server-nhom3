@@ -4,7 +4,7 @@ const Account = require('../models/account.model');
 module.exports.authToken = async (req, resp, next) => {
 	try{
 		let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
-		let account = await Account.findOne({phoneNumber: tokenData.phoneNumber});
+		let account = await Account.findOne({phoneNumber: payload.phoneNumber});
 		if(account == null){
 			resp.json({
 				code: 1005,
