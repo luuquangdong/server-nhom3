@@ -22,7 +22,7 @@ router.post('/login', async (req, resp) => {
 			userId: account._id,
 			phoneNumber: phoneNumber,
 			deviceId: req.body.deviceId
-		}, 'it4895');
+		}, process.env.TOKEN_SECRET);
 //		const res = await Account.updateOne({ phoneNumber: phoneNumber }, { token: token } );
 		account.online = true;
 		account.save();
@@ -43,7 +43,7 @@ router.post('/signup', async (req, resp) => {
 	// lấy phoneNumber truyền từ client
 	let phoneNumber = req.body.phonenumber;
 	// tìm tài khoản ứng với số điện thoại vừa lấy đk
-	console.log(req.body);
+//	console.log(req.body);
 	let account = await Account.find({phoneNumber: phoneNumber});
 
 	if(account.length == 0){ // tài khoản chửa tồn tại
@@ -76,7 +76,7 @@ router.post('/signup', async (req, resp) => {
 
 router.post('/logout', async (req, resp)=>{
 	try{
-		let data = jwt.verify(req.body.token, 'it4895');
+		let data = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
 		let account = await Account.findOne({_id: data.userId});
 		if(account === null){
 			resp.json({
@@ -149,7 +149,7 @@ router.post('/check_verify_code', async (req, resp) => {
 		return;
 	}
 	let verifyCode = await VerifyCode.findOne({phoneNumber: req.body.phonenumber});
-	console.log(verifyCode);
+//	console.log(verifyCode);
 	if(verifyCode == null){ // người dùng đã active
 			resp.json({
 				code: 1010,
