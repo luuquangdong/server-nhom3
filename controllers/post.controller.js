@@ -34,7 +34,6 @@ router.post('/search', async (req, resp) => {
 
 });
 
-<<<<<<< HEAD
 // map data from posts array to return data for client
 async function mapPostData(post){
 	let likeCount = post.userLike_id.length;
@@ -60,6 +59,3 @@ async function mapPostData(post){
 	}
 }
 module.exports = router;
-=======
-module.exports = router;
->>>>>>> c9a6784168a2bdc5fea8c82ab3e4e1b7a9ca3438
