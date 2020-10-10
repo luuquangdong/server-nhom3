@@ -3,6 +3,57 @@ const Post = require('../models/post.model');
 const Account = require('../models/account.model');
 const Comment = require('../models/comment.model');
 const SavedSearch = require('../models/savedsearch.model');
+const mongoose = require('mongoose'); 
+
+router.post('/del_saved_search', async (req, resp) => {
+	let searchId = req.body.search_id;
+	let all = req.body.all;
+
+	// tham so khong hop le
+	if ((all != 1 || all != 0 ) && (!mongoose.Types.ObjectId.isValid(searchId))){
+		resp.json({
+			code: 1004,
+			message: 'parameter  value is invalid',
+		});
+		return;
+	}
+
+	// xoa tat ca
+	if (all == 1) {
+		const deletedInfo = await SavedSearch.deleteMany({});
+		if (deletedInfo.deletedCount) {
+			resp.json({
+				code: 1000,
+				message: 'OK'
+			});
+			return;
+		} else {
+			resp.json({
+				code: 9994,
+				message: 'No data or end of list data',
+			});
+			return;
+		}
+
+	}
+
+	let savedSearch = await SavedSearch.findOne({_id: searchId}).exec();
+	console.log(savedSearch);
+
+	if (savedSearch){
+		await SavedSearch.deleteMany({keyword: savedSearch.keyword});
+		resp.json({
+			code: 1000,
+			message: 'OK',
+		})
+	} else {
+		resp.json({
+			code: 1004,
+			message: 'Parameter value is invalid',
+		})
+	}
+
+});
 
 router.post('/get_saved_search', async (req, resp) => {
 	let index = req.body.index;
@@ -90,7 +141,7 @@ async function mapPostData(post){
 			username: author.name,
 			avatar: author.linkAvatar,
 		},
-		described: '',
+		described: post.content,
 	}
 }
 
