@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
+const Post = require('./post.model');
+const Account = require('./account.model');
 
 // tạo khung cho account
 const commentSchema = new mongoose.Schema({
-	post_id: Schema.Types.ObjectId,
-	userComment_id: Schema.Types.ObjectId,
+	post_id: {type: Schema.Types.ObjectId, ref: Post},
+	userComment_id: {type: Schema.Types.ObjectId, ref: Account},
 	content: String,
   createdTime:{ type: Date, default: Date.now },
 });
