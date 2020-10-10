@@ -3,6 +3,7 @@ const { Schema } = mongoose;
 
 // tạo khung cho account
 const commentSchema = new mongoose.Schema({
+	post_id: Schema.Types.ObjectId,
 	userComment_id: Schema.Types.ObjectId,
 	content: String,
   createdTime:{ type: Date, default: Date.now },

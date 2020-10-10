@@ -5,9 +5,9 @@ const { Schema } = mongoose;
 const postSchema = new mongoose.Schema({
 	account_id: String,
 	content: String,
-	media: String,
+	linkImage: [String],
+	linkVideo: String,
 	userLike_id: [Schema.Types.ObjectId],
-	comment_id: [Schema.Types.ObjectId],
   createdTime:{ type: Date, default: Date.now },
 });
 postSchema.index({ content: "text"});
