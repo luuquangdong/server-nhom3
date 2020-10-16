@@ -141,7 +141,7 @@ async function mapPostData(post){
 			username: author.name,
 			avatar: author.linkAvatar,
 		},
-		described: post.content,
+		described: post.described,
 	}
 }
 
