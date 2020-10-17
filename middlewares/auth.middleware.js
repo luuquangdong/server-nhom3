@@ -16,9 +16,10 @@ module.exports.authToken = async (req, resp, next) => {
 		req.account = account;
 		next();
 	}catch(err){
+		console.log(err);
 		resp.json({
 			code: 9998,
-			message: "token is invalid"
+			message: "Token is invalid"
 		});
 	}
 }

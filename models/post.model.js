@@ -11,7 +11,7 @@ const postSchema = new mongoose.Schema({
 	userLike_id: {type: [Schema.Types.ObjectId], ref: Account},
   	createdTime:{ type: Date, default: Date.now },
   	modified: Date,
-  	state: {type: String, enum: []},
+  	status: String,
   	canComment: Boolean
 });
 postSchema.index({ described: "text"});

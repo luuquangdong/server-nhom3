@@ -172,6 +172,10 @@ router.post('/check_verify_code', async (req, resp) => {
 	}
 });
 
+router.post('/change_info_after_signup', (req, res) => {
+	
+});
+
 function generateVerifyCode(){
 	let num = [];
 	let char = [];
