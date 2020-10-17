@@ -181,7 +181,10 @@ router.post('/check_verify_code', async (req, resp) => {
 router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async (req, res) => {
 	let account = req.account;
 	
-	// xóa avatar cũ
+	// nếu có avatar mới gửi lên => xóa avatar cũ nếu có
+	if( req.file && account.avatar ){
+		cloudinary.remove(account.avatar.publicId);
+	}
 
 	// upload avatar mới
 	try{
@@ -195,7 +198,7 @@ router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async 
 			});
 	}
 	// lưu lại thông tin
-	account.name = req.username;
+	account.name = req.body.username;
 	account.save();
 
 	res.json({
