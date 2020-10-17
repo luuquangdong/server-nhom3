@@ -5,7 +5,7 @@ const accountSchema = new mongoose.Schema({
 	name: String,
 	password: String,
 	phoneNumber: String,
-	linkAvatar: String,
+	avatar: {url: String, publicId: String},
 	online: Boolean,
 });
 

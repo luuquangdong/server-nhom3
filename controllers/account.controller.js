@@ -1,9 +1,15 @@
 const router = require('express').Router();
-
 const jwt = require('jsonwebtoken');
 
+// import model
 const Account = require('../models/account.model');
 const VerifyCode = require('../models/verifycode.model');
+
+// import middleware
+const uploadAvatar = require('../middlewares/uploadAvatar.middleware');
+const authMdw = require('../middlewares/auth.middleware');
+
+const cloudinary = require('./cloudinaryConfig');
 
 router.post('/login', async (req, resp) => {
 	let phoneNumber = req.body.phonenumber;
@@ -172,8 +178,33 @@ router.post('/check_verify_code', async (req, resp) => {
 	}
 });
 
-router.post('/change_info_after_signup', (req, res) => {
+router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async (req, res) => {
+	let account = req.account;
 	
+	// xóa avatar cũ
+
+	// upload avatar mới
+	try{
+		let data = await cloudinary.uploads(req.file);
+		account.avatar = data;
+	} catch (err) {
+		console.log(err);
+		return resp.json({
+				code: 1007,
+				message: "Upload file failed."
+			});
+	}
+	// lưu lại thông tin
+	account.name = req.username;
+	account.save();
+
+	res.json({
+		id: account._id,
+		username: account.name,
+		phonenumber: account.phoneNumber,
+		created: new Date(),
+		avatar: account.avatar.url
+	});
 });
 
 function generateVerifyCode(){
