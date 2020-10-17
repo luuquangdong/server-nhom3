@@ -1,153 +1,64 @@
 const router = require('express').Router();
 const Post = require('../models/post.model');
-const Account = require('../models/account.model');
-const Comment = require('../models/comment.model');
-const SavedSearch = require('../models/savedsearch.model');
-const mongoose = require('mongoose'); 
+const cloudinary = require('./cloudinaryConfig');
+const uploadFile = require('../middlewares/uploadFile.middleware');
+const authMdw = require('../middlewares/auth.middleware');
 
-router.post('/del_saved_search', async (req, resp) => {
-	let searchId = req.body.search_id;
-	let all = req.body.all;
-
-	// tham so khong hop le
-	if ((all != 1 || all != 0 ) && (!mongoose.Types.ObjectId.isValid(searchId))){
-		resp.json({
-			code: 1004,
-			message: 'parameter  value is invalid',
+router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
+	if(req.files.image && req.files.video){
+		// có cả ảnh và video => từ chối
+		return resp.json({
+			code: 1007,
+			message: 'Upload file failed.'
 		});
-		return;
 	}
 
-	// xoa tat ca
-	if (all == 1) {
-		const deletedInfo = await SavedSearch.deleteMany({});
-		if (deletedInfo.deletedCount) {
-			resp.json({
-				code: 1000,
-				message: 'OK'
+	let post = new Post();
+
+	if(req.files.image){ // upload ảnh
+		try {
+			let uploadPromises = req.files.image.map(cloudinary.uploads);
+			let data = await Promise.all(uploadPromises);
+			// xử lý data
+			post.images = data;
+
+		} catch (error) {
+			// lỗi ko xđ
+			console.log(error);
+			return resp.json({
+				code: 1007,
+				message: "Upload file failed."
 			});
-			return;
-		} else {
-			resp.json({
-				code: 9994,
-				message: 'No data or end of list data',
-			});
-			return;
 		}
-
 	}
+	
+	if(req.files.video){ // upload video
+		try {
+			let data = await cloudinary.uploads(req.files.video[0]);
+			// xử lý data
+			post.video = data;
 
-	let savedSearch = await SavedSearch.findOne({_id: searchId}).exec();
-	console.log(savedSearch);
-
-	if (savedSearch){
-		await SavedSearch.deleteMany({keyword: savedSearch.keyword});
-		resp.json({
-			code: 1000,
-			message: 'OK',
-		})
-	} else {
-		resp.json({
-			code: 1004,
-			message: 'Parameter value is invalid',
-		})
+		} catch (error) {
+			// lỗi ko xđ
+			return resp.json({
+				code: 1007,
+				message: "Upload file failed."
+			});
+		}
 	}
+	// lưu thông tin post vào csdl
+	post.account_id = req.account._id;
+	post.described = req.body.described;
+	post.status = req.body.status;
+	post = await post.save();
 
+	resp.json({
+		code: 1000,
+		message: "OK",
+		data: {
+			id: post._id
+		}
+	});
 });
 
-router.post('/get_saved_search', async (req, resp) => {
-	let index = req.body.index;
-	let count = req.body.count;
-	let searchList = await SavedSearch.find({}).skip(index).limit(count).exec();
-	console.log(searchList);
-
-	if (searchList.length){
-		searchListData = searchList.map(savedSearch => {
-			return {
-				id: savedSearch._id,
-				keyword: savedSearch.keyword,
-				created: savedSearch.CreatedTime,
-			}
-		});
-
-		resp.json({
-			code: 1000,
-			message: 'OK',
-			data: searchList,
-		});
-	} else {
-		resp.json({
-			code: 9994,
-			message: 'No data or end of list data',
-		})
-	}
-});
-
-router.post('/search', async (req, resp) => {
-	let token = req.body.token;
-	let keyword = req.body.keyword;
-  let user_id = req.body.user_id;
-  let index = req.body.index;
-  let count = req.body.count;
-
-	new SavedSearch({
-		account_id: user_id,
-		keyword: keyword,
-	}).save();
-
-	// find post
-	let posts = await Post.find(
-		 { $text: { $search: keyword } },
-		 { score: { $meta: "textScore" } }
-	).sort( { score: { $meta: "textScore" } } ).skip(0).limit(0).exec();
-	console.log(posts);
-	let postsData = await Promise.all(posts.map(mapPostData));
-	//console.log(postsData);
-
-	if (posts.length){
-		resp.json({
-			code: 1000,
-			message: 'OK',
-			data: postsData,
-		});
-	} else {
-		resp.json({
-			code: 9994,
-			message: 'No data or end of list data',
-		})
-	}
-
-});
-
-// map data from posts array to return data for client
-async function mapPostData(post){
-	let likeCount = post.userLike_id.length;
-	let commentCount = await Comment.where({post_id: post._id}).countDocuments();
-	let is_liked = (post.userLike_id.indexOf(post.account_id) != -1) ? 'true' : 'false';
-	let author = await Account.findOne({_id: post.account_id});
-
-	return {
-		id: post._id,
-		image: post.image,
-		video: {
-			thumb: '',
-			url: '',
-		},
-		like: likeCount,
-		comment: commentCount,
-		is_liked: is_liked,
-		author: {
-			id: author._id,
-			username: author.name,
-			avatar: author.linkAvatar,
-		},
-		described: post.content,
-	}
-}
-
-async function saveSearch(keyword, accountId){
-	await new SavedSearch({
-
-	})
-}
 module.exports = router;
