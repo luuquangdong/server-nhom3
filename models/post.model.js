@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const Account = require('./account.model');
 
-// tạo khung cho account
 const postSchema = new mongoose.Schema({
 	account_id: {type: Schema.Types.ObjectId, ref: Account},
 	described: String,
@@ -16,7 +15,6 @@ const postSchema = new mongoose.Schema({
 });
 postSchema.index({ described: "text"});
 
-// tạo model
 var Post = mongoose.model('Post', postSchema);
 
 module.exports = Post;
