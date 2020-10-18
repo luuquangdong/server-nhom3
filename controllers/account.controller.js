@@ -178,30 +178,46 @@ router.post('/check_verify_code', async (req, resp) => {
 	}
 });
 
-router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async (req, res) => {
+router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async (req, resp) => {
 	let account = req.account;
-	
+
+	if( !req.body.username ) { // tên trống
+		return resp.json({
+			code: 1002,
+			message: "Parameter is not enough"
+		});
+	}
+
+	if( !isValidName(req.body.username) ){ // tên không hợp lệ
+		return resp.json({
+			code: 1004,
+			message: "Parameter value is invalid."
+		});
+	}
+
 	// nếu có avatar mới gửi lên => xóa avatar cũ nếu có
 	if( req.file && account.avatar ){
 		cloudinary.remove(account.avatar.publicId);
 	}
 
 	// upload avatar mới
-	try{
-		let data = await cloudinary.uploads(req.file);
-		account.avatar = data;
-	} catch (err) {
-		console.log(err);
-		return resp.json({
-				code: 1007,
-				message: "Upload file failed."
-			});
+	if(req.file){
+		try{
+			let data = await cloudinary.uploads(req.file);
+			account.avatar = data;
+		} catch (err) {
+			console.log(err);
+			return resp.json({
+					code: 1007,
+					message: "Upload file failed."
+				});
+		}
 	}
 	// lưu lại thông tin
 	account.name = req.body.username;
 	account.save();
 
-	res.json({
+	resp.json({
 		id: account._id,
 		username: account.name,
 		phonenumber: account.phoneNumber,
@@ -209,6 +225,21 @@ router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async 
 		avatar: account.avatar.url
 	});
 });
+
+function isValidName(username){
+	// ĐK1: cho phép chữ, số, dấu cách, gạch dưới, từ 2 -> 36 ký tự
+	const regName = /^[\p{L} _\d]{2,36}$/u;
+	// số điện thoại: bắt đầu là 0, tiếp là 9 số
+	const regPhone = /^0\d{9}$/;
+
+	if( !regName.test(username) ){ // ko thỏa mãn ĐK1
+		return false;
+	}
+	if( regPhone.test(username) ){ // là số điện thoại
+		return false;
+	}
+	return true;
+}
 
 function generateVerifyCode(){
 	let num = [];
