@@ -15,12 +15,14 @@ const authMdw = require('./middlewares/auth.middleware');
 // controllers
 const accountController = require('./controllers/account.controller');
 const postController = require('./controllers/post.controller');
+const friendController = require('./controllers/friend.controller');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/', accountController);
 app.use('/', authMdw.authToken, postController);
+app.use('/', authMdw.authToken, friendController);
 
 app.get('/', (req, resp) => {
 	resp.send("Hello World");
