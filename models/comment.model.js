@@ -3,7 +3,6 @@ const { Schema } = mongoose;
 const Post = require('./post.model');
 const Account = require('./account.model');
 
-// tạo khung cho account
 const commentSchema = new mongoose.Schema({
 	post_id: {type: Schema.Types.ObjectId, ref: Post},
 	userComment_id: {type: Schema.Types.ObjectId, ref: Account},
@@ -11,7 +10,6 @@ const commentSchema = new mongoose.Schema({
   createdTime:{ type: Date, default: Date.now },
 });
 
-// tạo model
 var Comment = mongoose.model('Comment', commentSchema);
 
 module.exports = Comment;

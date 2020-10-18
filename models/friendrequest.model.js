@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const Account = require('./account.model');
 
-// tạo khung cho account
 const friendrequestSchema = new mongoose.Schema({
 	userSendRequest_id: {type: Schema.Types.ObjectId, ref: Account},
 	userGetRequest_id: {type: Schema.Types.ObjectId, ref: Account},

@@ -5,8 +5,8 @@ const accountSchema = new mongoose.Schema({
 	name: String,
 	password: String,
 	phoneNumber: String,
-	linkAvatar: String,
-	online: Boolean,
+	avatar: {url: String, publicId: String},
+	online: Boolean
 });
 
 // tạo model
