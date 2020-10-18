@@ -32,3 +32,9 @@ module.exports.uploads = (file) => {
 		streamifier.createReadStream(file.buffer).pipe(stream);
 	});
 };
+
+module.exports.remove = (publicId) => {
+	cloudinary.uploader.destroy(publicId, (result) => {
+		//console.log(result);
+	});
+}

@@ -13,6 +13,13 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 		});
 	}
 
+	if(req.body.described.length > 500) { // vượt quá 500 từ
+		return resp.json({
+			code: 1004,
+			message: 'Parameter value is invalid.'
+		});
+	}
+
 	let post = new Post();
 
 	if(req.files.image){ // upload ảnh
