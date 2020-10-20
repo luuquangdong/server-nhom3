@@ -10,3 +10,6 @@
 8. search
 9. get_saved_search
 10. del_saved_search
+11. set_accept_friend
+12. set_request_friend
+13. get_requested_friends
