@@ -15,3 +15,4 @@
 13. get_requested_friends
 14. get_user_friends
 15. get_list_suggested_friends
+16. set_block

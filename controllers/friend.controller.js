@@ -2,8 +2,92 @@ const router = require('express').Router();
 const Account = require('../models/account.model');
 const FriendRequest = require('../models/friendrequest.model');
 const FriendList = require('../models/friendlist.model');
+const  FriendBlock = require('../models/friendblock.model');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
+
+router.post('/set_block', async (req, resp) => {
+  let token = req.body.token;
+  let blockedUserId = req.body.user_id;
+  let action = req.body.type;
+  let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+  let accountDoBlockId = payload.userId;
+
+  // user_id không phải là ObjectId type
+  // type không phải là 0 hoặc 1
+  if ((!mongoose.Types.ObjectId.isValid(blockedUserId))
+    || ((action != "0") && (action != "1"))
+    || (blockedUserId == accountDoBlockId)
+  ) {
+    resp.json({
+      code: 1004,
+      message: 'parameter value is invalid',
+    });
+    return;
+  }
+
+  // tìm userId
+  let blockedUser = await Account.findOne({_id: blockedUserId});
+  // khong tim thay user_id trong database
+  if(!blockedUser){
+    resp.json({
+      code: 9995,
+      message: 'user is not validated',
+    });
+    return;
+  }
+  // block neu action = 0
+  if (action == "0"){
+    // nếu trong database đã block user rồi thì trả mã lỗi
+    let isExistBlock = await FriendBlock.findOne({accountDoBlock_id: accountDoBlockId, blockedUser_id: blockedUserId});
+    if (isExistBlock) {
+      resp.json({
+        code: 1010,
+        message: 'action has been done previously by this user',
+      });
+      return;
+    }
+
+    // block user
+    await new FriendBlock({
+      accountDoBlock_id: accountDoBlockId,
+      blockedUser_id: blockedUserId
+    }).save();
+    resp.json({
+      code: 1000,
+      message: 'OK',
+    });
+    return;
+  }
+
+  // unblock
+  if (action == "1"){
+    // nếu trong database không có 2 người block nhau mà lại yêu cầu unblock
+    // trả về lỗi
+    let isExistBlock = await FriendBlock.findOne({accountDoBlock_id: accountDoBlockId, blockedUser_id: blockedUserId});
+    if (! isExistBlock) {
+      resp.json({
+        code: 1010,
+        message: 'action has been done previously by this user',
+      });
+      return;
+    }
+
+    // unblock user
+    await FriendBlock.deleteOne({
+      accountDoBlock_id: accountDoBlockId,
+      blockedUser_id: blockedUserId
+    });
+    resp.json({
+      code: 1000,
+      message: 'OK',
+    });
+    return;
+  }
+
+
+
+});
 
 router.post('/get_list_suggested_friends', async (req,resp) => {
   let token = req.body.token;
