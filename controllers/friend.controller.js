@@ -5,6 +5,50 @@ const FriendList = require('../models/friendlist.model');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 
+router.post('/get_list_suggested_friends', async (req,resp) => {
+  let token = req.body.token;
+  let index = req.body.index;
+  let count = req.body.count;
+  let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+  let requestUserId = payload.userId;
+
+  // tham số index hoặc count không phải là kiểu number
+  if ((isNaN(index - 0)) || (isNaN(count - 0))) {
+    resp.json({
+      code: 1003,
+      message: 'parameter type is invalid',
+    });
+    return;
+  }
+
+  let requestUserObjectId = new mongoose.Types.ObjectId(requestUserId);
+  let friendList = await FriendList.aggregate([
+    {$match: {$or: [{user1_id: requestUserObjectId}, {user2_id: requestUserObjectId}]}},
+    {$project: {_id: 0, u: ["$user1_id", "$user2_id"]}},
+    {$unwind: "$u"},
+    {$match: {u: {$ne: requestUserObjectId}}},
+    {$project: {u: 1}}
+  ]);
+
+  notSuggestedList = friendList.map(friend => (friend.u).toString());
+  // thieu nguoi dung bi block can bo sung
+  notSuggestedList.push(requestUserId);
+
+
+  suggestedFriends = await Account.find( {_id: {$nin: notSuggestedList }}).skip(parseInt(index)).limit(parseInt(count));
+  console.log(suggestedFriends);
+
+  let suggestedFriendData = await Promise.all(suggestedFriends.map((friend) => mapSuggestedFriends(requestUserId, friend)));
+  console.log(suggestedFriendData);
+  resp.json({
+    code: 1000,
+    message: 'OK',
+    data: {
+      list_users: suggestedFriendData
+    }
+  });
+});
+
 router.post('/get_user_friends', async (req,resp) => {
   let token = req.body.token;
   let friendUserId = req.body.user_id;
@@ -220,6 +264,30 @@ router.post('/set_accept_friend', async (req, resp) => {
     message: 'OK',
   });
 });
+
+async function mapSuggestedFriends(requestAccountId, friend){
+
+  let friendId = friend._id;
+
+  // Đếm số bạn chung của account gửi yêu cầu kết bạn và account nhận yêu cầu kết bạn
+  let mutual = [new mongoose.Types.ObjectId(requestAccountId), new mongoose.Types.ObjectId(friendId)];
+  let listSameFriend = await FriendList.aggregate([
+    {$match: {$or: [{user1_id: {$in: mutual}}, {user2_id: {$in: mutual}}]}},
+    {$project: {_id: 0, u: ["$user1_id", "$user2_id"]}},
+    {$unwind: "$u"},
+    {$match: {u: {$nin: mutual}}},
+    {$group: {_id: "$u", count: {$sum: 1}}},
+    {$match: {count: 2}},
+    {$project: {_id: 1}}
+  ]);
+  countSameFriend = listSameFriend.length;
+	return {
+    user_id: friend._id,
+    username: friend.name,
+    avatar: friend.avatar.url,
+    same_friends: countSameFriend,
+	}
+}
 
 async function mapFriendUserList(friend){
 	let accountId = friend.requestAccount;
