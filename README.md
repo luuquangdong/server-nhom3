@@ -13,3 +13,4 @@
 11. set_accept_friend
 12. set_request_friend
 13. get_requested_friends
+14. get_user_friends

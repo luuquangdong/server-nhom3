@@ -5,6 +5,68 @@ const FriendList = require('../models/friendlist.model');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 
+router.post('/get_user_friends', async (req,resp) => {
+  let token = req.body.token;
+  let friendUserId = req.body.user_id;
+  let index = req.body.index;
+  let count = req.body.count;
+  let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+  let requestUserId = payload.userId;
+
+  // tham số index hoặc count không phải là kiểu number
+  if ((isNaN(index - 0)) || (isNaN(count - 0))) {
+    resp.json({
+      code: 1003,
+      message: 'parameter type is invalid',
+    });
+    return;
+  }
+
+  // nếu không tìm thấy user_id trong parameter thì tìm danh sách bạn của người gửi trong token
+  if (!friendUserId) {
+    friendUserId = requestUserId;
+  }
+
+  // user_id không phải là ObjectId type
+  if (!mongoose.Types.ObjectId.isValid(friendUserId)) {
+    resp.json({
+      code: 1004,
+      message: 'parameter value is invalid',
+    });
+    return;
+  }
+
+  // tìm userId
+  let friendUser = await Account.findOne({_id: friendUserId});
+  // khong tim thay user_id trong database
+  if(!friendUser){
+    resp.json({
+      code: 9995,
+      message: 'user is not validated',
+    });
+    return;
+  }
+
+  let friendUserObjectId = new mongoose.Types.ObjectId(friendUserId);
+  let friendUserList = await FriendList.aggregate([
+    {$match: {$or: [{user1_id: friendUserObjectId}, {user2_id: friendUserObjectId}]}},
+    {$project: {_id: 0, createdTime: 1, u: ["$user1_id", "$user2_id"]}},
+    {$unwind: "$u"},
+    {$match: {u: {$ne: friendUserObjectId}}},
+    {$project: {u: 1, requestAccount: requestUserId, createdTime: 1}}
+  ]);
+  let friendData = await Promise.all(friendUserList.map(mapFriendUserList));
+  console.log(friendData);
+  resp.json({
+    code: 1000,
+    message: 'OK',
+    data: {
+      friends: friendData,
+      total: friendData.length,
+    }
+  });
+});
+
 router.post('/get_requested_friends', async (req, resp) => {
   let token = req.body.token;
   let index = req.body.index;
@@ -21,7 +83,7 @@ router.post('/get_requested_friends', async (req, resp) => {
     return;
   }
 
-  let accountSendRequest = await FriendRequest.find({userGetRequest_id: accountGetRequestId});
+  let accountSendRequest = await FriendRequest.find({userGetRequest_id: accountGetRequestId}).skip(parseInt(index)).limit(parseInt(count));
   let requestData = await Promise.all(accountSendRequest.map(mapUserInfo));
   resp.json({
     code: 1000,
@@ -32,9 +94,6 @@ router.post('/get_requested_friends', async (req, resp) => {
     }
   });
   return;
-
-
-
 });
 
 router.post('/set_request_friend', async (req, resp) => {
@@ -162,6 +221,32 @@ router.post('/set_accept_friend', async (req, resp) => {
   });
 });
 
+async function mapFriendUserList(friend){
+	let accountId = friend.requestAccount;
+  let friendOfAccountId = friend.u;
+  let friendOfAccount = await Account.findOne({_id:friendOfAccountId});
+
+  // Đếm số bạn chung của account gửi yêu cầu kết bạn và account nhận yêu cầu kết bạn
+  let mutual = [new mongoose.Types.ObjectId(accountId), new mongoose.Types.ObjectId(friendOfAccountId)];
+  let listSameFriend = await FriendList.aggregate([
+    {$match: {$or: [{user1_id: {$in: mutual}}, {user2_id: {$in: mutual}}]}},
+    {$project: {_id: 0, u: ["$user1_id", "$user2_id"]}},
+    {$unwind: "$u"},
+    {$match: {u: {$nin: mutual}}},
+    {$group: {_id: "$u", count: {$sum: 1}}},
+    {$match: {count: 2}},
+    {$project: {_id: 1}}
+  ]);
+  countSameFriend = listSameFriend.length;
+	return {
+    id: friendOfAccount._id,
+    username: friendOfAccount.name,
+    avatar: friendOfAccount.avatar.url,
+    same_friends: countSameFriend,
+    created: friend.createdTime,
+	}
+}
+
 async function mapUserInfo(request){
 	let accountSendRequestId = request.userSendRequest_id;
   let accountGetRequestId = request.userGetRequest_id;
@@ -181,13 +266,11 @@ async function mapUserInfo(request){
   countSameFriend = listSameFriend.length;
 
 	return {
-		request: {
-      id: accountSendRequest._id,
-      username: accountSendRequest.name,
-      avatar: accountSendRequest.avatar.url,
-      same_friends: countSameFriend,
-      created: request.createdTime,
-    }
+    id: accountSendRequest._id,
+    username: accountSendRequest.name,
+    avatar: accountSendRequest.avatar.url,
+    same_friends: countSameFriend,
+    created: request.createdTime,
 	}
 }
 
