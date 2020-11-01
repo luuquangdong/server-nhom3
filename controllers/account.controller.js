@@ -220,7 +220,7 @@ router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async 
 		id: account._id,
 		username: account.name,
 		phonenumber: account.phoneNumber,
-		created: new Date(),
+		created: new Date().getTime(),
 		avatar: account.avatar.url
 	});
 });
