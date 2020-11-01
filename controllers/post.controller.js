@@ -103,7 +103,7 @@ router.post('/get_post', authMdw.authToken, async (req, resp) => {
 			is_liked: post.userLike_id.includes(req.account._id) ? 1 : 0,
 			status: post.status,
 			can_edit: req.account._id.equals(tmp[1]._id) ? true : false,
-			banned: undefined, // cái này là như nào nhỉ
+			banned: post.banned, // cái này là như nào nhỉ
 			can_comment: post.canComment
 		};
 		if(post.images.length !== 0){
@@ -112,8 +112,8 @@ router.post('/get_post', authMdw.authToken, async (req, resp) => {
 				return {id: publicId, url: url};
 			});
 		}
-		console.log(req.account._id.equals(tmp[1]._id));
-		console.log(req.account._id, tmp[1]._id);
+	//	console.log(req.account._id.equals(tmp[1]._id));
+	//	console.log(req.account._id, tmp[1]._id);
 		if(post.video.url != undefined){
 			result.video = {
 				url: post.video.url,
@@ -124,7 +124,7 @@ router.post('/get_post', authMdw.authToken, async (req, resp) => {
 			accountDoBlock_id: tmp[1]._id, 
 			blockedUser_id: req.account._id
 		});
-		result.is_blocked = isBlocked == null ? false : true;
+		result.is_blocked = isBlocked == null ? 0 : 1;
 
 		resp.json({
 			code: 200,

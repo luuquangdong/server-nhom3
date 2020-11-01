@@ -11,7 +11,8 @@ const postSchema = new mongoose.Schema({
   	createdTime:{ type: Date, default: Date.now },
   	modified: Date,
   	status: String,
-  	canComment: Boolean
+  	canComment: Boolean,
+  	banned: String
 });
 postSchema.index({ described: "text"});
 
