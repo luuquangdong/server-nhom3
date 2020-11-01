@@ -11,10 +11,18 @@ const postSchema = new mongoose.Schema({
   	createdTime:{ type: Date, default: Date.now },
   	modified: Date,
   	status: String,
-  	canComment: Boolean
+  	canComment: Boolean,
+  	banned: String
 });
 postSchema.index({ described: "text"});
 
 var Post = mongoose.model('Post', postSchema);
+
+Post.prototype.getVideoThumb = function() {
+	const videoTailReg = /\.((wmv$)|(mp4$)|(avi$)|(wmv$)|(mov$)|(flv$))/gi
+	if(this.video != undefined){
+		return this.video.url.replace(videoTailReg, ".jpg");
+	}
+}
 
 module.exports = Post;
