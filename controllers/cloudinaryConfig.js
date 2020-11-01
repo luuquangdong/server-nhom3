@@ -10,7 +10,7 @@ cloudinary.config({
 module.exports.uploads = (file) => {
 	return new Promise((resolve, reject) => {
 		let folder = 'it4895/' + file.fieldname + 's';
-		// định nghĩa hàm upload
+		
 		let stream = cloudinary.uploader.upload_stream(
 			{
 				folder: folder,
@@ -28,7 +28,7 @@ module.exports.uploads = (file) => {
 				}
 			}
 		);
-		// thực hiện upload
+		
 		streamifier.createReadStream(file.buffer).pipe(stream);
 	});
 };

@@ -17,4 +17,11 @@ postSchema.index({ described: "text"});
 
 var Post = mongoose.model('Post', postSchema);
 
+Post.prototype.getVideoThumb = function() {
+	const videoTailReg = /\.((wmv$)|(mp4$)|(avi$)|(wmv$)|(mov$)|(flv$))/gi
+	if(this.video != undefined){
+		return this.video.url.replace(videoTailReg, ".jpg");
+	}
+}
+
 module.exports = Post;
