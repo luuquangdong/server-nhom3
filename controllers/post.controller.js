@@ -24,6 +24,14 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 		});
 	}
 
+	if(!req.body.described && !req.files.image && !req.files.video){
+		// không có nội dung, ảnh và video
+		return resp.json({
+			code: 1002,
+			message: "Parameter is not enough"
+		});
+	}
+
 	let post = new Post();
 
 	if(req.files.image){ // upload ảnh

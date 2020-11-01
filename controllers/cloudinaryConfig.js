@@ -17,7 +17,7 @@ module.exports.uploads = (file) => {
 				resource_type: "auto"
 			},
 			(err, result) => {
-				console.log(result);
+//				console.log(result);
 				if(result) {
 					resolve({
 						url: result.url,

@@ -17,32 +17,31 @@ router.post('/login', async (req, resp) => {
 	let account = await Account.findOne({phoneNumber: phoneNumber, password: password});
 	// khong co nguoi dung nay
 	if (account == null){
-		resp.json({
+		return resp.json({
 			code: 9995,
 			message: 'User is not validated'
 		});
-		return;
-	} else {
-		//Dung password va phonenumber
-		let token = jwt.sign({
-			userId: account._id,
-			phoneNumber: phoneNumber,
-			deviceId: req.body.deviceId
-		}, process.env.TOKEN_SECRET);
-//		const res = await Account.updateOne({ phoneNumber: phoneNumber }, { token: token } );
-		account.online = true;
-		account.save();
-		resp.json({
-			code: 1000,
-			message: 'OK',
-			data: {
-				id: account._id,
-				username: account.username,
-				token: token,
-				avatar: account.avatar,
-			}
-		});
 	}
+	//Dung password va phonenumber
+	let token = jwt.sign({
+		userId: account._id,
+		phoneNumber: phoneNumber,
+		deviceId: req.body.deviceId
+	}, process.env.TOKEN_SECRET);
+//		const res = await Account.updateOne({ phoneNumber: phoneNumber }, { token: token } );
+	// account.online = true;
+	account.token = token;
+	account.save();
+	resp.json({
+		code: 1000,
+		message: 'OK',
+		data: {
+			id: account._id,
+			username: account.username,
+			token: token,
+			avatar: account.avatar.url,
+		}
+	});
 });
 
 router.post('/signup', async (req, resp) => {
@@ -82,17 +81,17 @@ router.post('/signup', async (req, resp) => {
 
 router.post('/logout', async (req, resp)=>{
 	try{
-		let data = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
-		let account = await Account.findOne({_id: data.userId});
+		let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+		let account = await Account.findOne({_id: payload.userId});
 		if(account === null){
-			resp.json({
+			return resp.json({
 				code: 9998,
 				message: "token is invalid"
 			});
-			return;
 		}
-		account.online = false;
-		await account.save();
+//		account.online = false;
+		account.token = undefined;
+		account.save();
 		resp.json({
 			code: 1000,
 			message: "OK"
@@ -221,7 +220,7 @@ router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async 
 		id: account._id,
 		username: account.name,
 		phonenumber: account.phoneNumber,
-		created: new Date(),
+		created: new Date().getTime(),
 		avatar: account.avatar.url
 	});
 });
