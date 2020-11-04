@@ -80,6 +80,32 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 	});
 });
 
+router.post('/like', authMdw.authToken, async (req, resp) => {
+	if(req.body.id.length != 24){
+		return resp.json({code:1004, message: "Parameter value is invalid"});
+	}
+	let post = await Post.findOne({_id: req.body.id});
+	if(post == null){ // post không tồn tại
+		return req.json({
+			code: 9992,
+			message: "Post is not existed"
+		});
+	}
+	if(post.userLike_id.includes(req.account._id)){ 
+		// người dùng đã thích rồi => xóa lượt thích
+		post.userLike_id = post.userLike_id.filter( uli => !uli.equals(req.account._id) );
+	} else {
+		// người dùng chưa thích => tăng lượt thích
+		post.userLike_id.push(req.account._id);
+	}
+	await post.save();
+	resp.json({
+		code: 1000,
+		message: "OK",
+		data: { like: post.userLike_id.length }
+	});
+});
+
 router.post('/get_post', authMdw.authToken, async (req, resp) => {
 	let id = req.body.id;
 	if(id.length != 24){
