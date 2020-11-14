@@ -6,6 +6,31 @@ const  FriendBlock = require('../models/friendblock.model');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 
+router.post('/get_list_blocks', async (req, resp) => {
+  let token = req.body.token;
+  let index = req.body.index;
+  let count = req.body.count;
+  let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+  let accountId = payload.userId;
+
+  // tham số index hoặc count không phải là kiểu number
+  if ((isNaN(index - 0)) || (isNaN(count - 0))) {
+    resp.json({
+      code: 1003,
+      message: 'parameter type is invalid',
+    });
+    return;
+  }
+
+  let blockList = await FriendBlock.find({accountDoBlock_id: accountId}).skip(parseInt(index)).limit(parseInt(count));
+  let blockListData = await Promise.all(blockList.map(mapBlockList));
+  resp.json({
+    code: 1000,
+    message: 'OK',
+    data: blockListData,
+  });
+});
+
 router.post('/set_block', async (req, resp) => {
   let token = req.body.token;
   let blockedUserId = req.body.user_id;
@@ -348,6 +373,16 @@ router.post('/set_accept_friend', async (req, resp) => {
     message: 'OK',
   });
 });
+
+async function mapBlockList(block){
+	let blockUserId = block.blockedUser_id;
+  let blockUser = await Account.findOne({_id: blockUserId});
+	return {
+    id: blockUser._id,
+    name: blockUser.name,
+    avatar: blockUser.avatar.url,
+	}
+}
 
 async function mapSuggestedFriends(requestAccountId, friend){
 
