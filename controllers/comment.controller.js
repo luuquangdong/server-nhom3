@@ -55,7 +55,6 @@ router.post('/set_comment', async (req, resp) => {
 					.limit( parseInt(req.count) )
 			]);
 		// kiểm tra mk bị chủ bài viết chặn
-		console.log(tmp2[0].length != 0)
 		if(tmp2[0].length != 0){
 			return resp.json({
 				code: 1009,
@@ -96,9 +95,6 @@ router.post('/set_comment', async (req, resp) => {
 function commentMapper(cmts, cmters){
 	return cmts.map(cmt => {
 		let cmter = cmters.find(cmter => cmter._id.equals(cmt.userComment_id));
-		console.log(cmt)
-		console.log("-------------")
-		console.log(cmter)
 		return {
 			id: cmt._id,
 			comment: cmt.content,
