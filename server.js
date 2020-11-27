@@ -7,7 +7,7 @@ require('dotenv').config();
 
 // connect db
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/fake-facebook', {
+mongoose.connect(process.env.MONGODB_URL, {
 	useNewUrlParser: true,
 	useUnifiedTopology: true,
 	useCreateIndex: true
