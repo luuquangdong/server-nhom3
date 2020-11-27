@@ -22,15 +22,19 @@ const postController = require('./controllers/post.controller');
 const friendController = require('./controllers/friend.controller');
 const searchController = require('./controllers/search.controller');
 const pushController = require('./controllers/push.controller');
+const commentController = require('./controllers/comment.controller');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/', accountController);
-app.use('/', authMdw.authToken, friendController);
 app.use('/', postController);
 app.use('/', authMdw.authToken, searchController);
 app.use('/', authMdw.authToken, pushController);
+app.use( authMdw.authToken );
+app.use('/', friendController);
+app.use('/', commentController);
+app.use('/', searchController);
 
 app.get('/', (req, resp) => {
 	resp.send("Hello World");

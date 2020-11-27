@@ -15,7 +15,6 @@ module.exports = (req, resp, next) => {
 			{name: 'image', maxCount: 4},
 			{name: 'video', maxCount: 1}
 		]);
-
 	upload(req, resp, (error) => {
 		if(error){
 			console.log(error);
