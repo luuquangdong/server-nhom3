@@ -26,12 +26,14 @@ const commentController = require('./controllers/comment.controller');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/', accountController);
-app.use('/', postController);
-app.use( authMdw.authToken );
-app.use('/', friendController);
-app.use('/', commentController);
-app.use('/', searchController);
+app.use('/it4788', accountController);
+app.use('/it4788', postController);
+
+app.use('/it4788', authMdw.authToken);
+
+app.use('/it4788', friendController);
+app.use('/it4788', commentController);
+app.use('/it4788', searchController);
 
 app.get('/', (req, resp) => {
 	resp.send("Hello World");
