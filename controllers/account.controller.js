@@ -226,6 +226,77 @@ router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async 
 	});
 });
 
+router.post('/change_password', authMdw.authToken, async (req, resp) => {
+	let password = req.query.password;
+	let newPassword = req.query.new_password;
+	// kiểm tra mật khẩu
+	if(req.account.password !== password){
+		return resp.json({
+			code: 1004,
+			message: 'Parameter value is invalid'
+		});
+	}
+
+	if(!checkPassword(newPassword)){
+		//mật khẩu mới không hợp lệ
+	 	return resp.json({
+			code: 1004,
+			message: 'Parameter value is invalid'
+		});
+	}
+
+	// kiểm tra giống nhau
+	let n = lcs(password, newPassword);
+	if(n/password.length >= 0.8 || n/newPassword.length >= 0.8){
+		return resp.json({
+			code: 1004,
+			message: 'Parameter value is invalid'
+		});
+	}
+	req.account.password = newPassword;
+	await req.account.save();
+	resp.json({
+		code: 1000,
+		message: 'OK'
+	});
+});
+
+function checkPassword(password){
+	// được phép là chữ, số, dấu cách, gạch dưới, độ dài từ 6 -> 30 kí tự
+	const regChar = /^[\w_ ]{6,30}$/;
+	// số điện thoại
+	const regPhone = /^0\d{9}$/;
+	if( !regChar.test(password)){
+		return false;
+	}
+	if(regPhone.test(password)){
+		return false;
+	}
+	return true;
+}
+
+function lcs(s1, s2){
+	let result = [];
+	let firstRaw = [];
+	for(let i=0; i<=s1.length; i++) firstRaw.push(0);
+	result.push(firstRaw);
+	
+	for(let i=0; i<s2.length;i++){
+		let tmp=[];
+		tmp.push(0);
+		for(let j=0; j<s1.length; j++){
+			tmp.push(s1[i]===s2[j]? 1 + result[i][j] : 0);
+		}
+		result.push(tmp);
+	}
+	let maxLength = result[0][0];
+	for(let i=1; i<=s2.length; i++){
+		for(let j=1; j<=s1.length; j++)
+			if(result[i][j]>maxLength) maxLength = result[i][j];
+	}
+	return maxLength;
+}
+
 function isValidName(username){
 	// ĐK1: cho phép chữ, số, dấu cách, gạch dưới, từ 2 -> 36 ký tự
 	const regName = /^[\p{L} _\d]{2,36}$/u;
