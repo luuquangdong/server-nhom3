@@ -14,19 +14,19 @@ router.post('/set_comment', async (req, resp) => {
 		});
 	}
 	// kiểm tra số lượng từ của comment(trống hoặc trên 500 từ)
-	if(!req.body.comment || req.body.comment.trim().length == 0 || req.body.comment.length > 500){
+	if(!req.query.comment || req.query.comment.trim().length == 0 || req.query.comment.length > 500){
 		return resp.json({
 			code: 1004,
 			message: "Parameter value is invalid"
 		});
 	}
 
-	if(req.body.id.length != 24){ // độ dài id phải là 24
+	if(req.query.id.length != 24){ // độ dài id phải là 24
 		return resp.json({code:1004, message: "Parameter value is invalid"});
 	}
 	try{
 		let tmp = await Promise.all([
-			Post.findOne({_id: req.body.id}),	// lấy ra post
+			Post.findOne({_id: req.query.id}),	// lấy ra post
 			FriendBlock.find({accountDoBlock_id: req.account._id}) // lấy danh sách ng bị mk chặn
 		]);
 
@@ -50,7 +50,7 @@ router.post('/set_comment', async (req, resp) => {
 				FriendBlock.find({ /* tìm xem mình có bị chủ bài viết chặn ko */
 					accountDoBlock_id: tmp[0].account_id, 
 					blockedUser_id: req.account._id}),
-				Comment.find({ post_id: req.body.id}) /* lấy comment*/
+				Comment.find({ post_id: req.query.id}) /* lấy comment*/
 					.skip( parseInt(req.index) )
 					.limit( parseInt(req.count) )
 			]);
@@ -71,9 +71,9 @@ router.post('/set_comment', async (req, resp) => {
 		
 		// lưu comment
 		let myCmt = await new Comment({
-			post_id: req.body.id,
+			post_id: req.query.id,
 			userComment_id: req.account._id,
-			content: req.body.comment})
+			content: req.query.comment})
 			.save();
 		cmters.push(req.account);
 		cmtRes.push(myCmt);
