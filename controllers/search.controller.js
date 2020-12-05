@@ -13,7 +13,7 @@ router.post('/del_saved_search', async (req, resp) => {
 	if ((all != 1 || all != 0 ) && (!mongoose.Types.ObjectId.isValid(searchId))){
 		resp.json({
 			code: 1004,
-			message: 'parameter  value is invalid',
+			message: 'parameter value is invalid',
 		});
 		return;
 	}
