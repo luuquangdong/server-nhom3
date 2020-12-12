@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const jwt = require('jsonwebtoken');
+const {resCode, response} = require('../common/response_code');
 
 // import model
 const Account = require('../models/account.model');
@@ -14,7 +15,7 @@ const cloudinary = require('./cloudinaryConfig');
 router.post('/login', async (req, resp) => {
 	let phoneNumber = req.query.phonenumber;
 	let password = req.query.password;
-	console.log(password)
+	// console.log(password)
 	if (phoneNumber === undefined || password === undefined) {
 		return resp.json({
 			code: '1002',
@@ -29,7 +30,8 @@ router.post('/login', async (req, resp) => {
 			message: 'User is not existed'
 		});
 	}
-	if (! account.isValidated){
+	// console.log(account);
+	if (!account.active){
 		return resp.json({
 			code: '9995',
 			message: 'User is not validated'
@@ -53,14 +55,28 @@ router.post('/login', async (req, resp) => {
 			id: account._id,
 			username: account.username,
 			token: token,
-			avatar: account.avatar.url,
+			avatar: account.avatar === undefined ? account.avatar.url : account.getDefaultAvatar()
 		}
 	});
 });
 
 router.post('/signup', async (req, resp) => {
-	// lấy phoneNumber truyền từ client
-	let phoneNumber = req.query.phonenumber;
+
+	const phoneNumber = req.query.phonenumber;
+	const password = req.query.password;
+
+	if(!phoneNumber || !password){
+		return response(resp, 1002);
+	}
+
+	if(!isPhoneNumber(phoneNumber)){
+		return resp.json(resCode.get(1003));
+	}
+
+	if(!isValidPassword(password)){
+		return resp.json(resCode.get(1003));	
+	}
+
 	// tìm tài khoản ứng với số điện thoại vừa lấy đk
 //	console.log(req.query);
 	let account = await Account.find({phoneNumber: phoneNumber});
@@ -68,7 +84,8 @@ router.post('/signup', async (req, resp) => {
 	if(account.length == 0){ // tài khoản chửa tồn tại
 		// thêm tài khoản vào database
 		await new Account({phoneNumber: phoneNumber,
-			password: req.query.password
+			password: password,
+			uuid: req.query.uuid
 		}).save();
 
 		// sinh mã xác thực
@@ -80,16 +97,10 @@ router.post('/signup', async (req, resp) => {
 		}).save();
 
 		// gửi dữ liệu về cho client
-		resp.json({
-			code: 1000,
-			message: "OK"
-		});
+		resp.json(resCode.get(1000));
 	}
 	else{ // tài khoản đã tồn tại
-		resp.json({
-			code: 9996,
-			message: "User existed"
-		});
+		resp.json(resCode.get(9996));
 	}
 });
 
@@ -98,40 +109,36 @@ router.post('/logout', async (req, resp)=>{
 		let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
 		let account = await Account.findOne({_id: payload.userId});
 		if(account === null){
-			return resp.json({
-				code: 9998,
-				message: "token is invalid"
-			});
+			return resp.json(resCode.get(9998));
 		}
 //		account.online = false;
 		account.token = undefined;
 		account.save();
 		resp.json({
-			code: 1000,
+			code: "1000",
 			message: "OK"
 		});
 	}catch(err){
-		resp.json({
-			code: 9998,
-			message: "token is invalid"
-		});
+		resp.json(resCode.get(9998));
 	}
 });
 
 router.post('/get_verify_code', async (req, resp) => {
+	const {phonenumber} = req.query;
+
+	if(!phonenumber) return resp.json(resCode.get(1002));
+	
+	if(!isPhoneNumber(phonenumber)) return resp.json(resCode.get(1004));
+
 	let account = await Account.findOne({phoneNumber: req.query.phonenumber});
 	if(account == null){ // người dùng chưa đăng ký
-		resp.json({
-			code: 9995,
-			message: "User is not validated"
-		});
-		return;
+		return response(resp, 1004);
 	}
 
 	let verify = await VerifyCode.findOne({phoneNumber: req.query.phonenumber});
 	if(verify == null){ // người dùng đã active
 		resp.json({
-			code: 1010,
+			code: "1010",
 			message: "Action has been done previously by this user"
 		});
 		return;
@@ -142,54 +149,69 @@ router.post('/get_verify_code', async (req, resp) => {
 		let milsec = verify.lastUpdate.getTime();
 		if(Date.now() - milsec < 120000){
 			resp.json({
-				code: 1009,
+				code: "1009",
 				message: "Not access"
 			});
 			return;
 		}
 	}
-	verify.code.push(generateVerifyCode());
+	let newCode = generateVerifyCode();
+	verify.code.push(newCode);
 	verify.lastUpdate = Date.now();
 	verify.limitedTime = true;
 	await verify.save();
 	resp.json({
-		code: 1000,
-		message: "OK"
+		code: "1000",
+		message: "OK",
+		data: {
+			verifycode: newCode
+		}
 	});
 });
 
 router.post('/check_verify_code', async (req, resp) => {
+	const {phonenumber, code_verify} = req.query;
+
+	if(!phonenumber || !code_verify) return response(resp, 1002);
+
+	if(!isPhoneNumber(phonenumber)) return response(resp, 1004);
+
 	let account = await Account.findOne({phoneNumber: req.query.phonenumber});
 	if(account == null){
-		resp.json({
-			code: 9995,
-			message: 'User is not existed'
-		});
-		return;
+		return response(resp, 1004);
 	}
 	let verifyCode = await VerifyCode.findOne({phoneNumber: req.query.phonenumber});
 //	console.log(verifyCode);
 	if(verifyCode == null){ // người dùng đã active
-			resp.json({
-				code: 1010,
-				message: "Action has been done previously by this user"
-			});
-			return;
+			return response(resp, 1010);
 	}
 	let dung = verifyCode.code.find(item => item === req.query.code_verify);
 	if(dung){ // đúng code_verify
-		resp.json({
-			code: 1000,
-			message: "OK"
-		});
+		//xoa verify code
 		verifyCode.deleteOne();
-		account.isValidated = true;
+		
+		// tao token
+		let token = jwt.sign({
+		userId: account._id,
+		phoneNumber: phonenumber,
+		}, process.env.TOKEN_SECRET);
+
+		account.token = token;
+
+		account.active = true;
 		account.save();
-	}else{ // sai code_verify
+
 		resp.json({
-			code: 9993,
-			message: "Code verify is incorrect"
+			code: "1000",
+			message: "OK",
+			data: {
+				token: token,
+				id: account._id,
+				active: "1"
+			}
 		});
+	}else{ // sai code_verify
+		response(resp, 9993);
 	}
 });
 
@@ -197,16 +219,13 @@ router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async 
 	let account = req.account;
 
 	if( !req.query.username ) { // tên trống
-		return resp.json({
-			code: 1002,
-			message: "Parameter is not enough"
-		});
+		return response(resp , 1002);
 	}
-	console.log(req.query.username);
+	// console.log(req.query.username);
 	// console.log(isValidName(req.query.username));
 	if( !isValidName(req.query.username) ){ // tên không hợp lệ
 		return resp.json({
-			code: 1004,
+			code: "1004",
 			message: "Parameter value is invalid."
 		});
 	}
@@ -224,7 +243,7 @@ router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async 
 		} catch (err) {
 			console.log(err);
 			return resp.json({
-					code: 1007,
+					code: "1007",
 					message: "Upload file failed."
 				});
 		}
@@ -237,26 +256,28 @@ router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async 
 		id: account._id,
 		username: account.name,
 		phonenumber: account.phoneNumber,
-		created: new Date().getTime(),
-		avatar: account.avatar.url
+		created: account.createdTime.getTime(),
+		avatar: account.avatar === undefined ? account.avatar.url : account.getDefaultAvatar()
 	});
 });
 
 router.post('/change_password', authMdw.authToken, async (req, resp) => {
 	let password = req.query.password;
 	let newPassword = req.query.new_password;
+
+	if(!password || !newPassword) return response(resp, 1002);
 	// kiểm tra mật khẩu
 	if(req.account.password !== password){
 		return resp.json({
-			code: 1004,
+			code: "1004",
 			message: 'Parameter value is invalid'
 		});
 	}
 
-	if(!checkPassword(newPassword)){
+	if(!isValidPassword(newPassword)){
 		//mật khẩu mới không hợp lệ
 	 	return resp.json({
-			code: 1004,
+			code: "1004",
 			message: 'Parameter value is invalid'
 		});
 	}
@@ -265,21 +286,21 @@ router.post('/change_password', authMdw.authToken, async (req, resp) => {
 	let n = lcs(password, newPassword);
 	if(n/password.length >= 0.8 || n/newPassword.length >= 0.8){
 		return resp.json({
-			code: 1004,
+			code: "1004",
 			message: 'Parameter value is invalid'
 		});
 	}
 	req.account.password = newPassword;
 	await req.account.save();
 	resp.json({
-		code: 1000,
+		code: "1000",
 		message: 'OK'
 	});
 });
 
-function checkPassword(password){
-	// được phép là chữ, số, dấu cách, gạch dưới, độ dài từ 6 -> 30 kí tự
-	const regChar = /^[\w_ ]{6,30}$/;
+function isValidPassword(password){
+	// được phép là chữ, số, gạch dưới, độ dài từ 6 -> 30 kí tự
+	const regChar = /^[\w_]{6,30}$/;
 	// số điện thoại
 	const regPhone = /^0\d{9}$/;
 	if( !regChar.test(password)){
@@ -311,6 +332,11 @@ function lcs(s1, s2){
 			if(result[i][j]>maxLength) maxLength = result[i][j];
 	}
 	return maxLength;
+}
+
+function isPhoneNumber(number){
+	const regPhone = /^0\d{9}$/;
+	return regPhone.test(number);
 }
 
 function isValidName(username){

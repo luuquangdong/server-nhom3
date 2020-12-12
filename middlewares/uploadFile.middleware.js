@@ -1,6 +1,7 @@
 const multer = require('multer');
 
 function fileFilter(req, file, cb){
+	console.log(file);
 	if(file.mimetype.startsWith("image") || file.mimetype.startsWith("video")){
 		return cb(null, true);
 	}
@@ -21,18 +22,18 @@ module.exports = (req, resp, next) => {
 			if(error.code === 'LIMIT_UNEXPECTED_FILE'){
 				// vượt quá 4 ảnh
 				return resp.json({
-					code: 1008,
+					code: '1008',
 					message: "Maximum number of images."
 				});
 			}
 			if(error.code === 'WRONG_TYPE_FILE') {
 				return resp.json({
-					code: 1004,
+					code: '1003',
 					message: "Parameter type is invalid."
 				});
 			}
 			resp.json({
-				code: 1007,
+				code: '1007',
 				message: "Upload file failed."
 			});
 		}else{

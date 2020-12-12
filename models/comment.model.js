@@ -6,7 +6,7 @@ const Account = require('./account.model');
 const commentSchema = new mongoose.Schema({
 	post_id: {type: Schema.Types.ObjectId, ref: Post},
 	userComment_id: {type: Schema.Types.ObjectId, ref: Account},
-	content: String,
+	content: { type: String, trim: true },
   	createdTime:{ type: Date, default: Date.now },
 });
 

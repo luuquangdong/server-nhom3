@@ -16,12 +16,12 @@ module.exports = (req, resp, next) => {
 			console.log(error);
 			if(error.code === 'WRONG_TYPE_FILE') {
 				return resp.json({
-					code: 1004,
+					code: "1004",
 					message: "Parameter type is invalid."
 				});
 			}
 			resp.json({
-				code: 1007,
+				code: "1007",
 				message: "Upload file failed."
 			});
 		}else{
