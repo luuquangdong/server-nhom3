@@ -10,7 +10,19 @@ router.post('/get_list_blocks', async (req, resp) => {
   let token = req.query.token;
   let index = req.query.index;
   let count = req.query.count;
-  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
+
+  // khong du tham so
+	if (token === undefined
+    || index === undefined
+    || count === undefined
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+  }
+
+  let payload = jwt.verify(token, process.env.TOKEN_SECRET);
   let accountId = payload.userId;
 
   // tham số index hoặc count không phải là kiểu number
@@ -35,6 +47,18 @@ router.post('/set_block', async (req, resp) => {
   let token = req.query.token;
   let blockedUserId = req.query.user_id;
   let action = req.query.type;
+
+  // khong du tham so
+	if (token === undefined
+    || blockedUserId === undefined
+    || action === undefined
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+  }
+
   let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
   let accountDoBlockId = payload.userId;
 
@@ -118,7 +142,19 @@ router.post('/get_list_suggested_friends', async (req,resp) => {
   let token = req.query.token;
   let index = req.query.index;
   let count = req.query.count;
-  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
+
+  // khong du tham so
+	if (token === undefined
+    || index === undefined
+    || count === undefined
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+  }
+  
+  let payload = jwt.verify(token, process.env.TOKEN_SECRET);
   let requestUserId = payload.userId;
 
   // tham số index hoặc count không phải là kiểu number
@@ -163,11 +199,23 @@ router.post('/get_user_friends', async (req,resp) => {
   let friendUserId = req.query.user_id;
   let index = req.query.index;
   let count = req.query.count;
-  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
+
+  // khong du tham so
+	if (token === undefined
+    || index === undefined
+    || count === undefined
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+	}
+
+  let payload = jwt.verify(token, process.env.TOKEN_SECRET);
   let requestUserId = payload.userId;
 
   // tham số index hoặc count không phải là kiểu number
-  if ((isNaN(index - 0)) || (isNaN(count - 0))) {
+  if ((isNaN(index - 0)) || (isNaN(count - 0)) || count == 0) {
     resp.json({
       code: 1003,
       message: 'parameter type is invalid',
@@ -199,7 +247,7 @@ router.post('/get_user_friends', async (req,resp) => {
     });
     return;
   }
-
+  console.log(count)
   let friendUserObjectId = new mongoose.Types.ObjectId(friendUserId);
   let friendUserList = await FriendList.aggregate([
     {$match: {$or: [{user1_id: friendUserObjectId}, {user2_id: friendUserObjectId}]}},
@@ -207,7 +255,7 @@ router.post('/get_user_friends', async (req,resp) => {
     {$unwind: "$u"},
     {$match: {u: {$ne: friendUserObjectId}}},
     {$project: {u: 1, requestAccount: requestUserId, createdTime: 1}}
-  ]);
+  ]).skip(parseInt(index)).limit(parseInt(count)).exec();
   let friendData = await Promise.all(friendUserList.map(mapFriendUserList));
   console.log(friendData);
   resp.json({
@@ -224,6 +272,18 @@ router.post('/get_requested_friends', async (req, resp) => {
   let token = req.query.token;
   let index = req.query.index;
   let count = req.query.count;
+
+  // khong du tham so
+	if (token === undefined
+    || index === undefined
+    || count === undefined
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+	}
+
   let payload = jwt.verify(token, process.env.TOKEN_SECRET);
   let accountGetRequestId = payload.userId;
 
@@ -243,7 +303,7 @@ router.post('/get_requested_friends', async (req, resp) => {
     message: 'OK',
     data: {
       request: requestData,
-      total: requestData.length,
+      total: requestData.length + "",
     }
   });
   return;
@@ -253,7 +313,17 @@ router.post('/set_request_friend', async (req, resp) => {
   let token = req.query.token;
   let user_id = req.query.user_id;
 
-  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
+  // khong du tham so
+	if (token === undefined
+		|| user_id == undefined
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+	}
+
+  let payload = jwt.verify(token, process.env.TOKEN_SECRET);
   let accountRequest_id = payload.userId;
   let userGetRequest;
   if (mongoose.Types.ObjectId.isValid(user_id)){
@@ -269,11 +339,8 @@ router.post('/set_request_friend', async (req, resp) => {
     || (user_id == accountRequest_id)
     || (!mongoose.Types.ObjectId.isValid(user_id))) {
       resp.json({
-        code: 1004,
+        code: '1004',
         message: 'parameter value is invalid',
-        data: {
-          requested_friends: requested_friends,
-        },
       });
       return;
   }
@@ -282,7 +349,7 @@ router.post('/set_request_friend', async (req, resp) => {
   let deletedRequest = await FriendRequest.findOneAndDelete({userSendRequest_id: accountRequest_id, userGetRequest_id: user_id});
   if (deletedRequest) {
     resp.json({
-      code: 1000,
+      code: '1000',
       message: 'OK',
       data: {
         requested_friends: requested_friends - 1,
@@ -299,16 +366,16 @@ router.post('/set_request_friend', async (req, resp) => {
   		userGetRequest_id: user_id,
       createdTime: Date.now(),
   	}).save();
-    resp.json({
-      code: 1000,
+    return resp.json({
+      code: "1000",
       message: 'OK',
       data: {
         requested_friends: requested_friends + 1,
       },
     });
   } else {
-    resp.json({
-      code: 9994,
+    return resp.json({
+      code: "9994",
       message: 'no data or end of list data',
       data: {
         requested_friends: requested_friends
@@ -322,7 +389,18 @@ router.post('/set_accept_friend', async (req, resp) => {
   let accountRequestId = req.query.user_id;
   let isAccept = req.query.is_accept;
 
-  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
+  // khong du tham so
+	if (token === undefined
+    || accountRequestId === undefined
+    || isAccept === undefined
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+	}
+
+  let payload = jwt.verify(token, process.env.TOKEN_SECRET);
   let accountAcceptId = payload.userId;
 
   //user_id tham so khong thuoc kieu ObjectId
