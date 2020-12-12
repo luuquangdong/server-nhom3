@@ -8,18 +8,25 @@ const cloudinary = require('./cloudinaryConfig');
 const uploadFile = require('../middlewares/uploadFile.middleware');
 const authMdw = require('../middlewares/auth.middleware');
 
+const {resCode, response} = require('../common/response_code');
+
 router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
+
+	const {described, status} = req.query;
+
+	if(!described || !status) return response(resp, 1002);
+
 	if(req.files.image && req.files.video){
 		// có cả ảnh và video => từ chối
 		return resp.json({
-			code: 1007,
+			code: "1007",
 			message: 'Upload file failed.'
 		});
 	}
 
 	if(req.query.described.length > 500) { // vượt quá 500 từ
 		return resp.json({
-			code: 1004,
+			code: '1004',
 			message: 'Parameter value is invalid.'
 		});
 	}
@@ -27,7 +34,7 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 	if(!req.query.described && !req.files.image && !req.files.video){
 		// không có nội dung, ảnh và video
 		return resp.json({
-			code: 1002,
+			code: '1002',
 			message: "Parameter is not enough"
 		});
 	}
@@ -45,7 +52,7 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 			// lỗi ko xđ
 			console.log(error);
 			return resp.json({
-				code: 1007,
+				code: '1007',
 				message: "Upload file failed."
 			});
 		}
@@ -60,7 +67,7 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 		} catch (error) {
 			// lỗi ko xđ
 			return resp.json({
-				code: 1007,
+				code: '1007',
 				message: "Upload file failed."
 			});
 		}
@@ -72,7 +79,7 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 	post = await post.save();
 
 	resp.json({
-		code: 1000,
+		code:'1000',
 		message: "OK",
 		data: {
 			id: post._id
@@ -81,13 +88,18 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 });
 
 router.post('/like', authMdw.authToken, async (req, resp) => {
+
+	const {id} = req.query;
+	if(!id) return response(resp, 1002);
+
 	if(req.query.id.length != 24){
-		return resp.json({code:1004, message: "Parameter value is invalid"});
+		return resp.json({code:'1004', message: "Parameter value is invalid"});
 	}
+
 	let post = await Post.findOne({_id: req.query.id});
 	if(post == null){ // post không tồn tại
-		return req.json({
-			code: 9992,
+		return resp.json({
+			code: '9992',
 			message: "Post is not existed"
 		});
 	}
@@ -100,20 +112,23 @@ router.post('/like', authMdw.authToken, async (req, resp) => {
 	}
 	await post.save();
 	resp.json({
-		code: 1000,
+		code: '1000',
 		message: "OK",
 		data: { like: post.userLike_id.length }
 	});
 });
 
 router.post('/get_post', authMdw.authToken, async (req, resp) => {
-	let id = req.query.id;
+	const id = req.query.id;
+
+	if(!id) return response(resp, 1002);
+
 	if(id.length != 24){
-		return resp.json({code:1004, message: "Parameter value is invalid"});
+		return resp.json({code:'1004', message: "Parameter value is invalid"});
 	}
 	let post = await Post.findOne({_id: id});
 	if(post == null){// sai id bài post
-		return resp.json({code:9992, message: "Post is not existed"});
+		return resp.json({code:'9992', message: "Post is not existed"});
 	}
 	// console.log(post);
 	let proCount = Comment.countDocuments({post_id: id}).exec();
@@ -136,14 +151,14 @@ router.post('/get_post', authMdw.authToken, async (req, resp) => {
 			},
 			is_liked: post.userLike_id.includes(req.account._id) ? 1 : 0,
 			status: post.status,
-			can_edit: req.account._id.equals(tmp[1]._id) ? true : false,
+			can_edit: req.account._id.equals(tmp[1]._id) ? 1 : 0,
 			banned: post.banned, // cái này là như nào nhỉ
 			can_comment: post.canComment
 		};
 		if(post.images.length !== 0){
 			result.image = post.images.map((image)=> {
-				let {url, publicId} = image;
-				return {id: publicId, url: url};
+				let {url, _id} = image;
+				return {id: _id, url: url};
 			});
 		}
 	//	console.log(req.account._id.equals(tmp[1]._id));
@@ -161,14 +176,14 @@ router.post('/get_post', authMdw.authToken, async (req, resp) => {
 		result.is_blocked = isBlocked == null ? 0 : 1;
 
 		resp.json({
-			code: 200,
+			code: '1000',
 			message: "OK",
 			data: result
 		});
 	}catch(err){
 		console.log(err);
 		resp.json({
-				code: 1005,
+				code: '1005',
 				message: "Unknown error"
 		});
 	}

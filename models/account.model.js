@@ -8,7 +8,10 @@ const accountSchema = new mongoose.Schema({
 	avatar: {url: String, publicId: String},
 	online: Boolean,
 	token: String,
-	isBlocked: Boolean
+	isBlocked: Boolean,
+	uuid: String,
+	active: Boolean,
+	createdTime:{ type: Date, default: Date.now }
 });
 
 // tạo model
