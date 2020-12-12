@@ -15,14 +15,29 @@ const cloudinary = require('./cloudinaryConfig');
 router.post('/login', async (req, resp) => {
 	let phoneNumber = req.query.phonenumber;
 	let password = req.query.password;
+	// console.log(password)
+	if (phoneNumber === undefined || password === undefined) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+	}
 	let account = await Account.findOne({phoneNumber: phoneNumber, password: password});
 	// khong co nguoi dung nay
 	if (account == null){
 		return resp.json({
-			code: 9995,
+			code: '9995',
+			message: 'User is not existed'
+		});
+	}
+	// console.log(account);
+	if (!account.active){
+		return resp.json({
+			code: '9995',
 			message: 'User is not validated'
 		});
 	}
+	
 	//Dung password va phonenumber
 	let token = jwt.sign({
 		userId: account._id,
@@ -34,13 +49,13 @@ router.post('/login', async (req, resp) => {
 	account.token = token;
 	account.save();
 	resp.json({
-		code: 1000,
+		code: '1000',
 		message: 'OK',
 		data: {
 			id: account._id,
 			username: account.username,
 			token: token,
-			avatar: account.avatar.url,
+			avatar: account.avatar === undefined ? account.avatar.url : account.getDefaultAvatar()
 		}
 	});
 });
@@ -185,7 +200,7 @@ router.post('/check_verify_code', async (req, resp) => {
 
 		account.active = true;
 		account.save();
-		
+
 		resp.json({
 			code: "1000",
 			message: "OK",
@@ -242,7 +257,7 @@ router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async 
 		username: account.name,
 		phonenumber: account.phoneNumber,
 		created: account.createdTime.getTime(),
-		avatar: account.avatar.url
+		avatar: account.avatar === undefined ? account.avatar.url : account.getDefaultAvatar()
 	});
 });
 

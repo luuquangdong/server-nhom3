@@ -20,6 +20,7 @@ const friendController = require('./controllers/friend.controller');
 const searchController = require('./controllers/search.controller');
 const pushController = require('./controllers/push.controller');
 const commentController = require('./controllers/comment.controller');
+const videoController = require('./controllers/video.controller');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
