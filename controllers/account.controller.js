@@ -18,10 +18,17 @@ router.post('/login', async (req, resp) => {
 	// khong co nguoi dung nay
 	if (account == null){
 		return resp.json({
-			code: 9995,
+			code: '9995',
+			message: 'User is not existed'
+		});
+	}
+	if (! account.isValidated){
+		return resp.json({
+			code: '9995',
 			message: 'User is not validated'
 		});
 	}
+	
 	//Dung password va phonenumber
 	let token = jwt.sign({
 		userId: account._id,
@@ -33,7 +40,7 @@ router.post('/login', async (req, resp) => {
 	account.token = token;
 	account.save();
 	resp.json({
-		code: 1000,
+		code: '1000',
 		message: 'OK',
 		data: {
 			id: account._id,
@@ -169,6 +176,8 @@ router.post('/check_verify_code', async (req, resp) => {
 			message: "OK"
 		});
 		verifyCode.deleteOne();
+		account.isValidated = true;
+		account.save();
 	}else{ // sai code_verify
 		resp.json({
 			code: 9993,

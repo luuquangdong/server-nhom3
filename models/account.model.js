@@ -8,7 +8,8 @@ const accountSchema = new mongoose.Schema({
 	avatar: {url: String, publicId: String},
 	online: Boolean,
 	token: String,
-	isBlocked: Boolean
+	isBlocked: Boolean, 
+	isValidated: Boolean,
 });
 
 // tạo model
