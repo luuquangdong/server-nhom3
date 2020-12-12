@@ -4,13 +4,27 @@ const Account = require('../models/account.model');
 const Comment = require('../models/comment.model');
 const SavedSearch = require('../models/savedsearch.model');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
 router.post('/del_saved_search', async (req, resp) => {
+	let token = req.query.token;
 	let searchId = req.query.search_id;
 	let all = req.query.all;
-
+	let payload = jwt.verify(token, process.env.TOKEN_SECRET);
+	let accountId = payload.userId;
+	// khong du tham so
+	if (token === undefined
+		|| (searchId == undefined && all == undefined)
+		|| (searchId == undefined && all == 0)
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+	}
 	// tham so khong hop le
-	if ((all != 1 || all != 0 ) && (!mongoose.Types.ObjectId.isValid(searchId))){
+	if ((all != 1 && all != 0) && (!mongoose.Types.ObjectId.isValid(searchId))) {
+		console.log("hahaha")
 		resp.json({
 			code: 1004,
 			message: 'parameter value is invalid',
@@ -20,16 +34,16 @@ router.post('/del_saved_search', async (req, resp) => {
 
 	// xoa tat ca
 	if (all == 1) {
-		const deletedInfo = await SavedSearch.deleteMany({});
+		const deletedInfo = await SavedSearch.deleteMany({account_id: accountId });
 		if (deletedInfo.deletedCount) {
 			resp.json({
-				code: 1000,
+				code: '1000',
 				message: 'OK'
 			});
 			return;
 		} else {
 			resp.json({
-				code: 9994,
+				code: '9994',
 				message: 'No data or end of list data',
 			});
 			return;
@@ -37,18 +51,16 @@ router.post('/del_saved_search', async (req, resp) => {
 
 	}
 
-	let savedSearch = await SavedSearch.findOne({_id: searchId}).exec();
-	console.log(savedSearch);
-
-	if (savedSearch){
-		await SavedSearch.deleteMany({keyword: savedSearch.keyword});
-		resp.json({
-			code: 1000,
+	let savedSearch = await SavedSearch.findOne({ _id: searchId }).exec();
+	if (savedSearch) {
+		await SavedSearch.deleteMany({ keyword: savedSearch.keyword, account_id: accountId });
+		return resp.json({
+			code: "1000",
 			message: 'OK',
 		})
 	} else {
-		resp.json({
-			code: 1004,
+		return resp.json({
+			code: '1004',
 			message: 'Parameter value is invalid',
 		})
 	}
@@ -56,12 +68,36 @@ router.post('/del_saved_search', async (req, resp) => {
 });
 
 router.post('/get_saved_search', async (req, resp) => {
+	let token = req.query.token;
 	let index = req.query.index;
 	let count = req.query.count;
-	let searchList = await SavedSearch.find({}).skip(index).limit(count).exec();
+	let payload = jwt.verify(token, process.env.TOKEN_SECRET);
+	let AccountId = payload.userId;
+
+	// khong du tham so
+	if (token === undefined
+		|| index == undefined
+		|| count == undefined
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+	}
+
+	// kieu tham so khong hop le
+	if ((isNaN(index - 0)) || (isNaN(count - 0))) {
+		resp.json({
+			code: '1003',
+			message: 'parameter type is invalid',
+		});
+		return;
+	}
+
+	let searchList = await SavedSearch.find({account_id: AccountId }).skip(parseInt(index)).limit(parseInt(count)).exec();
 	console.log(searchList);
 
-	if (searchList.length){
+	if (searchList.length) {
 		searchListData = searchList.map(savedSearch => {
 			return {
 				id: savedSearch._id,
@@ -70,14 +106,14 @@ router.post('/get_saved_search', async (req, resp) => {
 			}
 		});
 
-		resp.json({
-			code: 1000,
+		return resp.json({
+			code: '1000',
 			message: 'OK',
 			data: searchList,
 		});
 	} else {
-		resp.json({
-			code: 9994,
+		return resp.json({
+			code: '9994',
 			message: 'No data or end of list data',
 		})
 	}
@@ -86,25 +122,55 @@ router.post('/get_saved_search', async (req, resp) => {
 router.post('/search', async (req, resp) => {
 	let token = req.query.token;
 	let keyword = req.query.keyword;
-  let user_id = req.query.user_id;
-  let index = req.query.index;
-  let count = req.query.count;
+	let user_id = req.query.user_id;
+	let index = req.query.index;
+	let count = req.query.count;
+	let payload = jwt.verify(token, process.env.TOKEN_SECRET);
+	let mainAccountId = payload.userId;
+
+	// khong du tham so
+	if (token === undefined
+		|| keyword == undefined
+		|| user_id == undefined
+		|| index == undefined
+		|| count == undefined
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+	}
+
+	// kieu tham so khong hop le
+	if ((isNaN(index - 0)) || (isNaN(count - 0))) {
+		resp.json({
+			code: '1003',
+			message: 'parameter type is invalid',
+		});
+		return;
+	}
+	// gia tri tham so khong hop le
+	if (user_id != mainAccountId) {
+		resp.json({
+			code: '1004',
+			message: 'parameter value is invalid',
+		});
+		return;
+	}
 
 	new SavedSearch({
-		account_id: user_id,
+		account_id: mainAccountId,
 		keyword: keyword,
 	}).save();
 
 	// find post
 	let posts = await Post.find(
-		 { $text: { $search: keyword } },
-		 { score: { $meta: "textScore" } }
-	).sort( { score: { $meta: "textScore" } } ).skip(0).limit(0).exec();
-	console.log(posts);
+		{ $text: { $search: keyword } },
+		{ score: { $meta: "textScore" } }
+	).sort({ score: { $meta: "textScore" } }).skip(parseInt(index)).limit(parseInt(count)).exec();
 	let postsData = await Promise.all(posts.map(mapPostData));
-	//console.log(postsData);
 
-	if (posts.length){
+	if (posts.length) {
 		resp.json({
 			code: 1000,
 			message: 'OK',
@@ -120,11 +186,11 @@ router.post('/search', async (req, resp) => {
 });
 
 // map data from posts array to return data for client
-async function mapPostData(post){
+async function mapPostData(post) {
 	let likeCount = post.userLike_id.length;
-	let commentCount = await Comment.where({post_id: post._id}).countDocuments();
+	let commentCount = await Comment.where({ post_id: post._id }).countDocuments();
 	let is_liked = (post.userLike_id.indexOf(post.account_id) != -1) ? 'true' : 'false';
-	let author = await Account.findOne({_id: post.account_id});
+	let author = await Account.findOne({ _id: post.account_id });
 
 	return {
 		id: post._id,
@@ -145,9 +211,4 @@ async function mapPostData(post){
 	}
 }
 
-async function saveSearch(keyword, accountId){
-	await new SavedSearch({
-
-	})
-}
 module.exports = router;

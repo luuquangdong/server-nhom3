@@ -14,6 +14,13 @@ const cloudinary = require('./cloudinaryConfig');
 router.post('/login', async (req, resp) => {
 	let phoneNumber = req.query.phonenumber;
 	let password = req.query.password;
+	console.log(password)
+	if (phoneNumber === undefined || password === undefined) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+	}
 	let account = await Account.findOne({phoneNumber: phoneNumber, password: password});
 	// khong co nguoi dung nay
 	if (account == null){
