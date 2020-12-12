@@ -142,8 +142,19 @@ router.post('/get_push_settings', async (req, resp) => {
 router.post('/set_devtoken', async (req, resp) => {
     let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
     let userId = payload.userId;
+    let token = req.query.token;
     let devtype = req.query.devtype;
     let devtoken = req.query.devtoken;
+    // khong du tham so
+	if (token === undefined
+		|| devtype == undefined
+		|| devtoken == undefined
+	) {
+		return resp.json({
+			code: '1002',
+			message: 'Parameter is not enough'
+		});
+	}
     
     let isValidDevtype = true;
     let isValidDevtoken = true;
