@@ -7,10 +7,10 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 
 router.post('/get_list_blocks', async (req, resp) => {
-  let token = req.body.token;
-  let index = req.body.index;
-  let count = req.body.count;
-  let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+  let token = req.query.token;
+  let index = req.query.index;
+  let count = req.query.count;
+  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
   let accountId = payload.userId;
 
   // tham số index hoặc count không phải là kiểu number
@@ -32,10 +32,10 @@ router.post('/get_list_blocks', async (req, resp) => {
 });
 
 router.post('/set_block', async (req, resp) => {
-  let token = req.body.token;
-  let blockedUserId = req.body.user_id;
-  let action = req.body.type;
-  let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+  let token = req.query.token;
+  let blockedUserId = req.query.user_id;
+  let action = req.query.type;
+  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
   let accountDoBlockId = payload.userId;
 
   // user_id không phải là ObjectId type
@@ -115,10 +115,10 @@ router.post('/set_block', async (req, resp) => {
 });
 
 router.post('/get_list_suggested_friends', async (req,resp) => {
-  let token = req.body.token;
-  let index = req.body.index;
-  let count = req.body.count;
-  let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+  let token = req.query.token;
+  let index = req.query.index;
+  let count = req.query.count;
+  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
   let requestUserId = payload.userId;
 
   // tham số index hoặc count không phải là kiểu number
@@ -159,11 +159,11 @@ router.post('/get_list_suggested_friends', async (req,resp) => {
 });
 
 router.post('/get_user_friends', async (req,resp) => {
-  let token = req.body.token;
-  let friendUserId = req.body.user_id;
-  let index = req.body.index;
-  let count = req.body.count;
-  let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+  let token = req.query.token;
+  let friendUserId = req.query.user_id;
+  let index = req.query.index;
+  let count = req.query.count;
+  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
   let requestUserId = payload.userId;
 
   // tham số index hoặc count không phải là kiểu number
@@ -221,9 +221,9 @@ router.post('/get_user_friends', async (req,resp) => {
 });
 
 router.post('/get_requested_friends', async (req, resp) => {
-  let token = req.body.token;
-  let index = req.body.index;
-  let count = req.body.count;
+  let token = req.query.token;
+  let index = req.query.index;
+  let count = req.query.count;
   let payload = jwt.verify(token, process.env.TOKEN_SECRET);
   let accountGetRequestId = payload.userId;
 
@@ -250,10 +250,10 @@ router.post('/get_requested_friends', async (req, resp) => {
 });
 
 router.post('/set_request_friend', async (req, resp) => {
-  let token = req.body.token;
-  let user_id = req.body.user_id;
+  let token = req.query.token;
+  let user_id = req.query.user_id;
 
-  let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
   let accountRequest_id = payload.userId;
   let userGetRequest;
   if (mongoose.Types.ObjectId.isValid(user_id)){
@@ -318,11 +318,11 @@ router.post('/set_request_friend', async (req, resp) => {
 });
 
 router.post('/set_accept_friend', async (req, resp) => {
-  let token = req.body.token;
-  let accountRequestId = req.body.user_id;
-  let isAccept = req.body.is_accept;
+  let token = req.query.token;
+  let accountRequestId = req.query.user_id;
+  let isAccept = req.query.is_accept;
 
-  let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+  let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
   let accountAcceptId = payload.userId;
 
   //user_id tham so khong thuoc kieu ObjectId

@@ -7,7 +7,7 @@ require('dotenv').config();
 
 // connect db
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/fake-facebook', {
+mongoose.connect(process.env.MONGODB_URL, {
 	useNewUrlParser: true,
 	useUnifiedTopology: true,
 	useCreateIndex: true
@@ -28,15 +28,17 @@ const videoController = require('./controllers/video.controller');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/', accountController);
-app.use('/', postController);
-app.use('/', authMdw.authToken, searchController);
-app.use('/', authMdw.authToken, pushController);
-app.use( authMdw.authToken );
-app.use('/', friendController);
-app.use('/', commentController);
-app.use('/', searchController);
-app.use('/',authMdw.authToken, videoController);
+
+app.use('/it4788', accountController);
+app.use('/it4788', postController);
+
+app.use('/it4788', authMdw.authToken);
+
+app.use('/it4788', pushController);
+app.use('/it4788', friendController);
+app.use('/it4788', commentController);
+app.use('/it4788', searchController);
+
 
 app.get('/', (req, resp) => {
 	resp.send("Hello World");

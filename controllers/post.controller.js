@@ -17,14 +17,14 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 		});
 	}
 
-	if(req.body.described.length > 500) { // vượt quá 500 từ
+	if(req.query.described.length > 500) { // vượt quá 500 từ
 		return resp.json({
 			code: 1004,
 			message: 'Parameter value is invalid.'
 		});
 	}
 
-	if(!req.body.described && !req.files.image && !req.files.video){
+	if(!req.query.described && !req.files.image && !req.files.video){
 		// không có nội dung, ảnh và video
 		return resp.json({
 			code: 1002,
@@ -67,8 +67,8 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 	}
 	// lưu thông tin post vào csdl
 	post.account_id = req.account._id;
-	post.described = req.body.described;
-	post.status = req.body.status;
+	post.described = req.query.described;
+	post.status = req.query.status;
 	post = await post.save();
 
 	resp.json({
@@ -81,10 +81,10 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 });
 
 router.post('/like', authMdw.authToken, async (req, resp) => {
-	if(req.body.id.length != 24){
+	if(req.query.id.length != 24){
 		return resp.json({code:1004, message: "Parameter value is invalid"});
 	}
-	let post = await Post.findOne({_id: req.body.id});
+	let post = await Post.findOne({_id: req.query.id});
 	if(post == null){ // post không tồn tại
 		return req.json({
 			code: 9992,
@@ -107,7 +107,7 @@ router.post('/like', authMdw.authToken, async (req, resp) => {
 });
 
 router.post('/get_post', authMdw.authToken, async (req, resp) => {
-	let id = req.body.id;
+	let id = req.query.id;
 	if(id.length != 24){
 		return resp.json({code:1004, message: "Parameter value is invalid"});
 	}

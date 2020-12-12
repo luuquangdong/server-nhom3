@@ -6,8 +6,8 @@ const SavedSearch = require('../models/savedsearch.model');
 const mongoose = require('mongoose');
 
 router.post('/del_saved_search', async (req, resp) => {
-	let searchId = req.body.search_id;
-	let all = req.body.all;
+	let searchId = req.query.search_id;
+	let all = req.query.all;
 
 	// tham so khong hop le
 	if ((all != 1 || all != 0 ) && (!mongoose.Types.ObjectId.isValid(searchId))){
@@ -56,8 +56,8 @@ router.post('/del_saved_search', async (req, resp) => {
 });
 
 router.post('/get_saved_search', async (req, resp) => {
-	let index = req.body.index;
-	let count = req.body.count;
+	let index = req.query.index;
+	let count = req.query.count;
 	let searchList = await SavedSearch.find({}).skip(index).limit(count).exec();
 	console.log(searchList);
 
@@ -84,11 +84,11 @@ router.post('/get_saved_search', async (req, resp) => {
 });
 
 router.post('/search', async (req, resp) => {
-	let token = req.body.token;
-	let keyword = req.body.keyword;
-  let user_id = req.body.user_id;
-  let index = req.body.index;
-  let count = req.body.count;
+	let token = req.query.token;
+	let keyword = req.query.keyword;
+  let user_id = req.query.user_id;
+  let index = req.query.index;
+  let count = req.query.count;
 
 	new SavedSearch({
 		account_id: user_id,

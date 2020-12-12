@@ -9,18 +9,18 @@ const { request } = require('express');
 
 router.post('/set_push_settings', async (req, resp) => {
 
-    let likeComment = req.body.like_comment;
-    let fromFriends = req.body.from_friends;
-    let requestedFriend = req.body.requested_friend;
-    let suggestedFriend = req.body.suggested_friend;
-    let birthday = req.body.birthday;
-    let video = req.body.video;
-    let report = req.body.report;
-    let soundOn = req.body.sound_on;
-    let notificationOn = req.body.notification_on;
-    let vibrantOn = req.body.vibrant_on;
-    let ledOn = req.body.led_on;
-    let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+    let likeComment = req.query.like_comment;
+    let fromFriends = req.query.from_friends;
+    let requestedFriend = req.query.requested_friend;
+    let suggestedFriend = req.query.suggested_friend;
+    let birthday = req.query.birthday;
+    let video = req.query.video;
+    let report = req.query.report;
+    let soundOn = req.query.sound_on;
+    let notificationOn = req.query.notification_on;
+    let vibrantOn = req.query.vibrant_on;
+    let ledOn = req.query.led_on;
+    let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
     let userId = payload.userId;
 
     let input = [likeComment,
@@ -110,7 +110,7 @@ router.post('/set_push_settings', async (req, resp) => {
 });
 
 router.post('/get_push_settings', async (req, resp) => {
-    let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+    let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
     let userId = payload.userId;
 
     let pushSetting = await PushSetting.findOne({ account_id: userId });
@@ -140,10 +140,10 @@ router.post('/get_push_settings', async (req, resp) => {
 });
 
 router.post('/set_devtoken', async (req, resp) => {
-    let payload = jwt.verify(req.body.token, process.env.TOKEN_SECRET);
+    let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
     let userId = payload.userId;
-    let devtype = req.body.devtype;
-    let devtoken = req.body.devtoken;
+    let devtype = req.query.devtype;
+    let devtoken = req.query.devtoken;
     
     let isValidDevtype = true;
     let isValidDevtoken = true;
@@ -156,9 +156,9 @@ router.post('/set_devtoken', async (req, resp) => {
             message: 'parameter value is invalid',
         });
     } else {
-        device = await Devtoken.findOne({token: req.body.token, devtype: devtype, devtoken: devtoken});
+        device = await Devtoken.findOne({token: req.query.token, devtype: devtype, devtoken: devtoken});
         if (!device) {
-            await new Devtoken({token: req.body.token, devtype: devtype, devtoken: devtoken}).save();
+            await new Devtoken({token: req.query.token, devtype: devtype, devtoken: devtoken}).save();
         }
         resp.json({
             code: 1000,

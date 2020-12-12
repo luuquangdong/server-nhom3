@@ -18,3 +18,7 @@
 16. get_list_suggested_friends
 17. set_block
 18. like
+19. get_list_blocks
+20. get_push_settings
+21. set_push_settings
+22. set_devtoken
