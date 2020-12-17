@@ -21,12 +21,14 @@ const searchController = require('./controllers/search.controller');
 const pushController = require('./controllers/push.controller');
 const commentController = require('./controllers/comment.controller');
 const videoController = require('./controllers/video.controller');
+const userController = require('./controllers/user.controller');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/it4788', checkDBConnection);
 app.use('/it4788', accountController);
+app.use('/it4788', userController);
 app.use('/it4788', postController);
 
 app.use('/it4788', authMdw.authToken);
