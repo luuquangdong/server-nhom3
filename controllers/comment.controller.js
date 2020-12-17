@@ -71,12 +71,13 @@ router.post('/set_comment', async (req, resp) => {
 		}
 
 		if(count == 0) tmp2[1] = [];
-		
+		tmp2[1].pop();
 		// lọc danh sách bình luận chặn nhau
 		let cmtRes = tmp2[1].filter(comment => !tmp[1].includes(comment.userComment_id));// lấy ra comment có userComment_id không có trong ds chặn của mk
 
 		// lấy ra thông tin người comment
 		let cmterIds = cmtRes.map(cmt => cmt.userComment_id);
+
 		let cmters = await Account.find({ _id: {$in: cmterIds} });
 		
 		// lưu comment
@@ -85,8 +86,8 @@ router.post('/set_comment', async (req, resp) => {
 			userComment_id: req.account._id,
 			content: req.query.comment})
 			.save();
-		cmters.push(req.account);
-		cmtRes.push(myCmt);
+		cmters.unshift(req.account);
+		cmtRes.unshift(myCmt);
 
 		resp.json({
 			code: '1000',

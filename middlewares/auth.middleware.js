@@ -7,7 +7,7 @@ module.exports.authToken = async (req, resp, next) => {
 		let account = await Account.findOne({token: req.query.token});
 		if(account == null){
 			return resp.json({
-				code: 9998,
+				code: "9998",
 				message: "Token is invalid"
 			});
 		}
@@ -17,7 +17,7 @@ module.exports.authToken = async (req, resp, next) => {
 	}catch(err){
 		console.log(err);
 		resp.json({
-			code: 9998,
+			code: "9998",
 			message: "Token is invalid"
 		});
 	}

@@ -23,18 +23,18 @@ module.exports = (req, resp, next) => {
 				// vượt quá 4 ảnh
 				return resp.json({
 					code: '1008',
-					message: "Maximum number of images."
+					message: "Maximum number of images"
 				});
 			}
 			if(error.code === 'WRONG_TYPE_FILE') {
 				return resp.json({
 					code: '1003',
-					message: "Parameter type is invalid."
+					message: "Parameter type is invalid"
 				});
 			}
 			resp.json({
 				code: '1007',
-				message: "Upload file failed."
+				message: "Upload file failed"
 			});
 		}else{
 			next();

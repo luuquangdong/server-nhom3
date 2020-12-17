@@ -58,7 +58,7 @@ router.post('/set_push_settings', async (req, resp) => {
 
     if (isValidInput == false) {
         resp.json({
-            code: 1004,
+            code: '1004',
             message: 'parameter value is invalid',
         });
         return;
@@ -82,7 +82,7 @@ router.post('/set_push_settings', async (req, resp) => {
     if (!pushSetting) {
         await new PushSetting({ account_id: userId, ...pushSettingInput }).save();
         resp.json({
-            code: 1000,
+            code: '1000',
             message: 'OK',
         });
         return;
@@ -96,13 +96,13 @@ router.post('/set_push_settings', async (req, resp) => {
     // trả về lỗi hành động đã thực hiện trước đó
     if (res.nModified == 0) {
         resp.json({
-            code: 1010,
+            code: '1010',
             message: 'Action has done previously by this user',
         });
         return;
     } else {
         resp.json({
-            code: 1000,
+            code: '1000',
             message: 'OK',
         });
         return;
@@ -132,7 +132,7 @@ router.post('/get_push_settings', async (req, resp) => {
     // không có bản ghi nào bị sửa đổi => pushSettingInput hoàn toàn trùng vs dữ liệu trong database
     // trả về lỗi hành động đã thực hiện trước đó
     resp.json({
-        code: 1000,
+        code: '1000',
         message: 'OK',
         data: pushSetting
     });
@@ -163,8 +163,8 @@ router.post('/set_devtoken', async (req, resp) => {
     
     if (!isValidDevtype || !isValidDevtoken) {
         resp.json({
-            code: 1004,
-            message: 'parameter value is invalid',
+            code: '1004',
+            message: 'Parameter value is invalid',
         });
     } else {
         device = await Devtoken.findOne({token: req.query.token, devtype: devtype, devtoken: devtoken});
@@ -172,9 +172,9 @@ router.post('/set_devtoken', async (req, resp) => {
             await new Devtoken({token: req.query.token, devtype: devtype, devtoken: devtoken}).save();
         }
         resp.json({
-            code: 1000,
+            code: '1000',
             message: 'OK',
-            data: 'you has posted set_devtoken'
+            data: 'You has posted set_devtoken'
         });
     }
 

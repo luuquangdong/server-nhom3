@@ -47,7 +47,7 @@ router.post('/get_list_videos', async (req, resp) => {
 
     console.log(videoList);
     resp.json({
-        code: 1000,
+        code: '1000',
         message: 'OK',
         data: {
             post: postData,

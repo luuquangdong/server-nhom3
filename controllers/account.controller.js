@@ -27,7 +27,7 @@ router.post('/login', async (req, resp) => {
 	if (account == null){
 		return resp.json({
 			code: '9995',
-			message: 'User is not existed'
+			message: 'User is not validated'
 		});
 	}
 	// console.log(account);

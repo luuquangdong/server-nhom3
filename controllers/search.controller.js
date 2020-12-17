@@ -26,8 +26,8 @@ router.post('/del_saved_search', async (req, resp) => {
 	if ((all != 1 && all != 0) && (!mongoose.Types.ObjectId.isValid(searchId))) {
 		console.log("hahaha")
 		resp.json({
-			code: 1004,
-			message: 'parameter value is invalid',
+			code: '1004',
+			message: 'Parameter value is invalid',
 		});
 		return;
 	}
@@ -89,7 +89,7 @@ router.post('/get_saved_search', async (req, resp) => {
 	if ((isNaN(index - 0)) || (isNaN(count - 0))) {
 		resp.json({
 			code: '1003',
-			message: 'parameter type is invalid',
+			message: 'Parameter type is invalid',
 		});
 		return;
 	}
@@ -172,13 +172,13 @@ router.post('/search', async (req, resp) => {
 
 	if (posts.length) {
 		resp.json({
-			code: 1000,
+			code: '1000',
 			message: 'OK',
 			data: postsData,
 		});
 	} else {
 		resp.json({
-			code: 9994,
+			code: '9994',
 			message: 'No data or end of list data',
 		})
 	}

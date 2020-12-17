@@ -16,7 +16,7 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 
 	if(!described || !status) return response(resp, 1002);
 
-	if(req.files.image && req.files.video){
+	if(req.files && req.files.image && req.files.video){
 		// có cả ảnh và video => từ chối
 		return resp.json({
 			code: "1007",
@@ -31,7 +31,7 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 		});
 	}
 
-	if(!req.query.described && !req.files.image && !req.files.video){
+	if(!req.query.described && !req.files){
 		// không có nội dung, ảnh và video
 		return resp.json({
 			code: '1002',
@@ -41,7 +41,7 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 
 	let post = new Post();
 
-	if(req.files.image){ // upload ảnh
+	if(req.files && req.files.image){ // upload ảnh
 		try {
 			let uploadPromises = req.files.image.map(cloudinary.uploads);
 			let data = await Promise.all(uploadPromises);
@@ -53,12 +53,12 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 			console.log(error);
 			return resp.json({
 				code: '1007',
-				message: "Upload file failed."
+				message: "Upload file failed"
 			});
 		}
 	}
 	
-	if(req.files.video){ // upload video
+	if(req.files && req.files.video){ // upload video
 		try {
 			let data = await cloudinary.uploads(req.files.video[0]);
 			// xử lý data
@@ -68,7 +68,7 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 			// lỗi ko xđ
 			return resp.json({
 				code: '1007',
-				message: "Upload file failed."
+				message: "Upload file failed"
 			});
 		}
 	}

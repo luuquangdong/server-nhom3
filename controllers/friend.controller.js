@@ -28,7 +28,7 @@ router.post('/get_list_blocks', async (req, resp) => {
   // tham số index hoặc count không phải là kiểu number
   if ((isNaN(index - 0)) || (isNaN(count - 0))) {
     resp.json({
-      code: 1003,
+      code: '1003',
       message: 'parameter type is invalid',
     });
     return;
@@ -37,7 +37,7 @@ router.post('/get_list_blocks', async (req, resp) => {
   let blockList = await FriendBlock.find({accountDoBlock_id: accountId}).skip(parseInt(index)).limit(parseInt(count));
   let blockListData = await Promise.all(blockList.map(mapBlockList));
   resp.json({
-    code: 1000,
+    code: '1000',
     message: 'OK',
     data: blockListData,
   });
@@ -69,7 +69,7 @@ router.post('/set_block', async (req, resp) => {
     || (blockedUserId == accountDoBlockId)
   ) {
     resp.json({
-      code: 1004,
+      code: '1004',
       message: 'parameter value is invalid',
     });
     return;
@@ -80,8 +80,8 @@ router.post('/set_block', async (req, resp) => {
   // khong tim thay user_id trong database
   if(!blockedUser){
     resp.json({
-      code: 9995,
-      message: 'user is not validated',
+      code: '9995',
+      message: 'User is not validated',
     });
     return;
   }
@@ -91,8 +91,8 @@ router.post('/set_block', async (req, resp) => {
     let isExistBlock = await FriendBlock.findOne({accountDoBlock_id: accountDoBlockId, blockedUser_id: blockedUserId});
     if (isExistBlock) {
       resp.json({
-        code: 1010,
-        message: 'action has been done previously by this user',
+        code: '1010',
+        message: 'Action has been done previously by this user',
       });
       return;
     }
@@ -103,7 +103,7 @@ router.post('/set_block', async (req, resp) => {
       blockedUser_id: blockedUserId
     }).save();
     resp.json({
-      code: 1000,
+      code: '1000',
       message: 'OK',
     });
     return;
@@ -116,7 +116,7 @@ router.post('/set_block', async (req, resp) => {
     let isExistBlock = await FriendBlock.findOne({accountDoBlock_id: accountDoBlockId, blockedUser_id: blockedUserId});
     if (! isExistBlock) {
       resp.json({
-        code: 1010,
+        code: '1010',
         message: 'action has been done previously by this user',
       });
       return;
@@ -128,7 +128,7 @@ router.post('/set_block', async (req, resp) => {
       blockedUser_id: blockedUserId
     });
     resp.json({
-      code: 1000,
+      code: '1000',
       message: 'OK',
     });
     return;
@@ -160,7 +160,7 @@ router.post('/get_list_suggested_friends', async (req,resp) => {
   // tham số index hoặc count không phải là kiểu number
   if ((isNaN(index - 0)) || (isNaN(count - 0))) {
     resp.json({
-      code: 1003,
+      code: '1003',
       message: 'parameter type is invalid',
     });
     return;
@@ -186,7 +186,7 @@ router.post('/get_list_suggested_friends', async (req,resp) => {
   let suggestedFriendData = await Promise.all(suggestedFriends.map((friend) => mapSuggestedFriends(requestUserId, friend)));
   console.log(suggestedFriendData);
   resp.json({
-    code: 1000,
+    code: '1000',
     message: 'OK',
     data: {
       list_users: suggestedFriendData
@@ -217,8 +217,8 @@ router.post('/get_user_friends', async (req,resp) => {
   // tham số index hoặc count không phải là kiểu number
   if ((isNaN(index - 0)) || (isNaN(count - 0)) || count == 0) {
     resp.json({
-      code: 1003,
-      message: 'parameter type is invalid',
+      code: '1003',
+      message: 'Parameter type is invalid',
     });
     return;
   }
@@ -231,8 +231,8 @@ router.post('/get_user_friends', async (req,resp) => {
   // user_id không phải là ObjectId type
   if (!mongoose.Types.ObjectId.isValid(friendUserId)) {
     resp.json({
-      code: 1004,
-      message: 'parameter value is invalid',
+      code: '1004',
+      message: 'Parameter value is invalid',
     });
     return;
   }
@@ -242,8 +242,8 @@ router.post('/get_user_friends', async (req,resp) => {
   // khong tim thay user_id trong database
   if(!friendUser){
     resp.json({
-      code: 9995,
-      message: 'user is not validated',
+      code: '9995',
+      message: 'User is not validated',
     });
     return;
   }
@@ -259,7 +259,7 @@ router.post('/get_user_friends', async (req,resp) => {
   let friendData = await Promise.all(friendUserList.map(mapFriendUserList));
   console.log(friendData);
   resp.json({
-    code: 1000,
+    code: '1000',
     message: 'OK',
     data: {
       friends: friendData,
@@ -290,7 +290,7 @@ router.post('/get_requested_friends', async (req, resp) => {
   // tham số index hoặc count không phải là kiểu number
   if ((isNaN(index - 0)) || (isNaN(count - 0))) {
     resp.json({
-      code: 1003,
+      code: '1003',
       message: 'parameter type is invalid',
     });
     return;
@@ -299,7 +299,7 @@ router.post('/get_requested_friends', async (req, resp) => {
   let accountSendRequest = await FriendRequest.find({userGetRequest_id: accountGetRequestId}).skip(parseInt(index)).limit(parseInt(count));
   let requestData = await Promise.all(accountSendRequest.map(mapUserInfo));
   resp.json({
-    code: 1000,
+    code: '1000',
     message: 'OK',
     data: {
       request: requestData,
@@ -409,8 +409,8 @@ router.post('/set_accept_friend', async (req, resp) => {
     || ((isAccept != '0') && (isAccept != '1'))
   ){
     resp.json({
-      code: 1004,
-      message: 'parameter value is invalid',
+      code: '1004',
+      message: 'Parameter value is invalid',
     });
     return;
   }
@@ -419,8 +419,8 @@ router.post('/set_accept_friend', async (req, resp) => {
   // khong tim thay user_id trong database
   if(!accountRequest){
     resp.json({
-      code: 9995,
-      message: 'user is not validated',
+      code: '9995',
+      message: 'User is not validated',
     });
     return;
   }
@@ -429,7 +429,7 @@ router.post('/set_accept_friend', async (req, resp) => {
   let friendRequest = await FriendRequest.findOne({userSendRequest_id: accountRequestId, userGetRequest_id: accountAcceptId});
   if (!friendRequest){
     resp.json({
-      code: 1010,
+      code: '1010',
       message: 'Action has been done previously by this user',
     });
     return;
@@ -447,7 +447,7 @@ router.post('/set_accept_friend', async (req, resp) => {
   //Xóa yêu cầu kết bạn khi chấp nhận kết bạn hoặc không chấp nhận yêu cầu kết bạn
   await FriendRequest.findOneAndDelete({userSendRequest_id: accountRequestId, userGetRequest_id: accountAcceptId});
   resp.json({
-    code: 1000,
+    code: '1000',
     message: 'OK',
   });
 });
