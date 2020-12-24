@@ -34,7 +34,12 @@ module.exports.uploads = (file) => {
 };
 
 module.exports.remove = (publicId) => {
-	cloudinary.uploader.destroy(publicId, (result) => {
-		//console.log(result);
-	});
+	try{
+		cloudinary.uploader.destroy(publicId, (result) => {
+			//console.log(result);
+			console.log('removed old avatar');
+		});
+	} catch(err){
+		console.log(err);
+	}
 }

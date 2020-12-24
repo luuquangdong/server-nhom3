@@ -2,6 +2,8 @@ const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const {resCode, response} = require('../common/response_code');
 
+const {isValidName, isPhoneNumber} = require('../common/func');
+
 // import model
 const Account = require('../models/account.model');
 const VerifyCode = require('../models/verifycode.model');
@@ -215,52 +217,6 @@ router.post('/check_verify_code', async (req, resp) => {
 	}
 });
 
-router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async (req, resp) => {
-	let account = req.account;
-
-	if( !req.query.username ) { // tên trống
-		return response(resp , 1002);
-	}
-	// console.log(req.query.username);
-	// console.log(isValidName(req.query.username));
-	if( !isValidName(req.query.username) ){ // tên không hợp lệ
-		return resp.json({
-			code: "1004",
-			message: "Parameter value is invalid."
-		});
-	}
-
-	// nếu có avatar mới gửi lên => xóa avatar cũ nếu có
-	if( req.file && account.avatar ){
-		cloudinary.remove(account.avatar.publicId);
-	}
-
-	// upload avatar mới
-	if(req.file){
-		try{
-			let data = await cloudinary.uploads(req.file);
-			account.avatar = data;
-		} catch (err) {
-			console.log(err);
-			return resp.json({
-					code: "1007",
-					message: "Upload file failed."
-				});
-		}
-	}
-	// lưu lại thông tin
-	account.name = req.query.username;
-	account.save();
-   
-	resp.json({
-		id: account._id,
-		username: account.name,
-		phonenumber: account.phoneNumber,
-		created: account.createdTime.getTime(),
-		avatar: account.avatar === undefined ? account.avatar.url : account.getDefaultAvatar()
-	});
-});
-
 router.post('/change_password', authMdw.authToken, async (req, resp) => {
 	let password = req.query.password;
 	let newPassword = req.query.new_password;
@@ -333,29 +289,7 @@ function lcs(s1, s2){
 	}
 	return maxLength;
 }
-
-function isPhoneNumber(number){
-	const regPhone = /^0\d{9}$/;
-	return regPhone.test(number);
-}
-
-function isValidName(username){
-	// ĐK1: cho phép chữ, số, dấu cách, gạch dưới, từ 2 -> 36 ký tự
-	const regName = /^[\p{L} _\d]{2,36}$/u;
-	// số điện thoại
-	const regPhone = /^0\d{9}$/;
-
-	if( !regName.test(username) ){ // ko thỏa mãn ĐK1
-		console.log("dk1");
-		return false;
-	}
-	if( regPhone.test(username) ){ // là số điện thoại
-		console.log("dk2");
-		return false;
-	}
-	return true;
-}
-
+	
 function generateVerifyCode(){
 	let num = [];
 	let char = [];

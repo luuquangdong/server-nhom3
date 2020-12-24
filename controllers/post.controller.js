@@ -136,24 +136,33 @@ router.post('/get_post', authMdw.authToken, async (req, resp) => {
 	try{
 		let tmp = await Promise.all([proCount, proAuthor]);
 		// console.log(tmp);
+
+		// kiểm tra bị block
+		let isBlocked = await FriendBlock.findOne({
+			accountDoBlock_id: tmp[1]._id, 
+			blockedUser_id: req.account._id
+		});
+		if(isBlocked) return resp.json({ ...resCode.get(1000), data: {is_blocked: '1'} });
+		result.is_blocked = '0';
+
 		let result = {
 			id: post._id,
 			described: post.described,
-			created: post.createdTime.getTime(),
+			created: post.createdTime.getTime().toString(),
 			modified: post.modified,
-			like: post.userLike_id.length,
-			comment: tmp[0],
+			like: post.userLike_id.length.toString(),
+			comment: tmp[0].toString(),
 			author: {
 				id: tmp[1]._id,
 				name: tmp[1].name,
 				avatar: tmp[1].avatar.url,
 				online: tmp[1].online
 			},
-			is_liked: post.userLike_id.includes(req.account._id) ? 1 : 0,
+			is_liked: post.userLike_id.includes(req.account._id) ? '1' : '0',
 			status: post.status,
-			can_edit: req.account._id.equals(tmp[1]._id) ? 1 : 0,
+			can_edit: req.account._id.equals(tmp[1]._id) ? '1' : '0',
 			banned: post.banned, // cái này là như nào nhỉ
-			can_comment: post.canComment
+			can_comment: post.canComment ? '1' : '0'
 		};
 		if(post.images.length !== 0){
 			result.image = post.images.map((image)=> {
@@ -169,11 +178,6 @@ router.post('/get_post', authMdw.authToken, async (req, resp) => {
 				thumb: post.getVideoThumb()
 			}
 		}
-		let isBlocked = await FriendBlock.findOne({
-			accountDoBlock_id: tmp[1]._id, 
-			blockedUser_id: req.account._id
-		});
-		result.is_blocked = isBlocked == null ? 0 : 1;
 
 		resp.json({
 			code: '1000',

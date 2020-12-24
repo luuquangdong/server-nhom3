@@ -6,12 +6,16 @@ const accountSchema = new mongoose.Schema({
 	password: String,
 	phoneNumber: String,
 	avatar: {url: String, publicId: String},
+	coverImage: {url: String, publicId: String},
 	online: Boolean,
 	token: String,
 	isBlocked: Boolean,
 	uuid: String,
 	active: Boolean,
-	createdTime:{ type: Date, default: Date.now }
+	createdTime:{ type: Date, default: Date.now },
+	link: String,
+	city: String,
+	country: String
 });
 
 // tạo model
@@ -19,6 +23,11 @@ var Account = mongoose.model('Account', accountSchema);
 
 Account.prototype.getDefaultAvatar = () => {
 	return 'https://res.cloudinary.com/it4895/image/upload/v1607791757/it4895/avatars/default-avatar_jklwc7.jpg';
+}
+
+Account.prototype.getAvatar = () => {
+	if(!this.avatar) return 'https://res.cloudinary.com/it4895/image/upload/v1607791757/it4895/avatars/default-avatar_jklwc7.jpg';
+	return this.avatar;
 }
 
 module.exports = Account;
