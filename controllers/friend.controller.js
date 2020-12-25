@@ -263,7 +263,7 @@ router.post('/get_user_friends', async (req,resp) => {
     message: 'OK',
     data: {
       friends: friendData,
-      total: friendData.length,
+      total: friendData.length.toString(),
     }
   });
 });

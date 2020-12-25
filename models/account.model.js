@@ -15,7 +15,8 @@ const accountSchema = new mongoose.Schema({
 	createdTime:{ type: Date, default: Date.now },
 	link: String,
 	city: String,
-	country: String
+	country: String,
+	coordinates: {latitude: String, longitude: String}
 });
 
 // tạo model
@@ -27,7 +28,7 @@ Account.prototype.getDefaultAvatar = () => {
 
 Account.prototype.getAvatar = () => {
 	if(!this.avatar) return 'https://res.cloudinary.com/it4895/image/upload/v1607791757/it4895/avatars/default-avatar_jklwc7.jpg';
-	return this.avatar;
+	return this.avatar.url;
 }
 
 module.exports = Account;
