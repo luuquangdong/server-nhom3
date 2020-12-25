@@ -15,6 +15,17 @@ function isValidName(username){
 	return true;
 }
 
+function isNumber(num){
+	const regNum = /^-?\d+$/;
+	return regNum.test(num);
+}
+
+function isValidId(id){
+	const regId = /^[0-9a-fA-F]{24}$/;
+
+	return regId.test(id);
+}
+
 function isPhoneNumber(number){
 	const regPhone = /^0\d{9}$/;
 	return regPhone.test(number);
@@ -22,5 +33,7 @@ function isPhoneNumber(number){
 
 module.exports = {
 	isValidName,
-	isPhoneNumber
+	isPhoneNumber,
+	isValidId,
+	isNumber
 }

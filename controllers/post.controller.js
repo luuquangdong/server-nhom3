@@ -3,12 +3,16 @@ const Post = require('../models/post.model');
 const Comment = require('../models/comment.model');
 const Account = require('../models/account.model');
 const FriendBlock = require('../models/friendblock.model');
+const FriendList = require('../models/friendlist.model');
 
 const cloudinary = require('./cloudinaryConfig');
 const uploadFile = require('../middlewares/uploadFile.middleware');
 const authMdw = require('../middlewares/auth.middleware');
 
+var mongoose = require('mongoose');
+
 const {resCode, response} = require('../common/response_code');
+const {isValidId, isNumber} = require('../common/func');
 
 router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 
@@ -143,23 +147,23 @@ router.post('/get_post', authMdw.authToken, async (req, resp) => {
 			blockedUser_id: req.account._id
 		});
 		if(isBlocked) return resp.json({ ...resCode.get(1000), data: {is_blocked: '1'} });
-		result.is_blocked = '0';
 
 		let result = {
 			id: post._id,
 			described: post.described,
 			created: post.createdTime.getTime().toString(),
-			modified: post.modified,
+			modified: post.modified ? post.modified.getTime().toString() : undefined,
 			like: post.userLike_id.length.toString(),
 			comment: tmp[0].toString(),
 			author: {
 				id: tmp[1]._id,
 				name: tmp[1].name,
-				avatar: tmp[1].avatar.url,
+				avatar: tmp[1].getAvatar(),
 				online: tmp[1].online
 			},
 			is_liked: post.userLike_id.includes(req.account._id) ? '1' : '0',
 			status: post.status,
+			is_blocked: '0',
 			can_edit: req.account._id.equals(tmp[1]._id) ? '1' : '0',
 			banned: post.banned, // cái này là như nào nhỉ
 			can_comment: post.canComment ? '1' : '0'
@@ -172,7 +176,7 @@ router.post('/get_post', authMdw.authToken, async (req, resp) => {
 		}
 	//	console.log(req.account._id.equals(tmp[1]._id));
 	//	console.log(req.account._id, tmp[1]._id);
-		if(post.video.url != undefined){
+		if(post.video && post.video.url != undefined){
 			result.video = {
 				url: post.video.url,
 				thumb: post.getVideoThumb()
@@ -193,4 +197,196 @@ router.post('/get_post', authMdw.authToken, async (req, resp) => {
 	}
 });
 
+router.post('/get_list_posts', authMdw.authToken, async (req, resp) => {
+	const {user_id, latitude, longitude, last_id} = req.query;
+	var {index, count} = req.query;
+	const {account} = req;
+
+	if(index === undefined || !count) return response(resp, 1002);
+
+	index = parseInt(index);
+	count = parseInt(count);
+
+	if(!isNumber(index) || !isNumber(count) || index < 0 || count < 1) return response(resp, 1004);
+
+	if(last_id && !isValidId(last_id)) return response(resp, 1004);
+	try{
+		var postList = null;
+		if(last_id){ // check last_id
+			const co = await Post.findOne({_id: last_id});
+			if(co == null) return response(resp, 1004);
+
+			var condition = {};
+			if(index > 0) condition._id = { $lt: mongoose.Types.ObjectId(last_id) };
+			postList = await Post
+				.find(condition)
+				.sort({_id: -1})
+				.limit(count);
+		}else {
+			postList = await Post.find()
+				.sort({_id: -1})
+				.skip(index)
+				.limit(count);
+		}
+		if(postList.length === 0) return response(resp, 9994);
+
+		if(isValidCoordinates(latitude, longitude)){
+			account.coordinates = {latitude, longitude};
+			account.save();
+		}
+
+		const [mikChan, chanMik] = await Promise.all([
+			FriendBlock.find({accountDoBlock_id: account._id}), 
+			FriendBlock.find({blockedUser_id: account._id})
+		])
+
+		const userIdsBlocked = [];
+		for(let item of mikChan){ // nhung thang mk chan
+			userIdsBlocked.push(item.blockedUser_id);
+		}
+		for(let item of chanMik) { // nhung thang chan mk
+			userIdsBlocked.push(item.accountDoBlock_id);
+		}
+		// console.log(userIdsBlocked);
+		//const friendList = await FriendList.find({$or: [{user1_id: account._id}, {user2_id: account._id}]});
+		// console.log(friendList)
+		// console.log('owner: ',account._id)
+		// console.log(friendList);
+	//	const friendIds = [];
+		// for(let item of friendList){
+		// 	if(item.user1_id.equals(account._id)){ // user2 la ban mk
+		// 		friendIds.push(item.user2_id);
+		// 	} else {
+		// 		friendIds.push(item.user1_id);
+		// 	}
+		// }
+		// var condition = { account_id: { $nin: userIdsBlocked} };
+
+		const data = {};
+		data.last_id = postList[postList.length - 1]._id;
+		
+		data.new_items = "0";
+		if(last_id) { // xu ly neu co bai post moi
+			const prePostCount = await Post
+				.find({ _id: {$gte: last_id} })
+				.countDocuments();
+			let newItem = prePostCount - index;
+			if(newItem > 0) data.new_items = newItem.toString();
+		}
+
+		var posts = [];
+		for(let post of postList){
+			posts.push(mapPostToData(post, account._id));
+		}
+
+		// kiem tra mk va chu bai viet co chan nhau ko
+		for(let post of posts){
+			for(let blockId of userIdsBlocked){
+				if(blockId.toString() == post.account_id){
+					post.is_blocked = "1";
+				}
+			}
+		}
+
+		// dem comment
+		posts = await Promise.all(posts.map(async post => {
+			const count = await countComment(post);
+			const newPost = {...post, comment: count.toString()}
+			return newPost;
+		}))
+		// map author to post
+		posts = await Promise.all(posts.map(mapAuthorToPost));
+
+		data.posts = posts;
+
+		resp.json({
+			code: "1000",
+			message: "OK",
+			data: data
+		});
+	} catch (err) {
+		console.log(err);
+		response(resp, 1005);
+	}
+});
+
 module.exports = router;
+
+function mapPostToData(post, accountId){
+	const data = {
+		id: post._id,
+		described: post.described,
+		created: post.createdTime.getTime().toString(),
+		like: post.userLike_id.length.toString(),
+		comment: post.comment,
+		is_liked: post.userLike_id.includes(accountId) ? "1" : "0",
+		can_comment: post.canComment ? "1" : "0",
+		banned: post.banned ? "1" : "0",
+		status: post.status,
+		is_blocked: "0",
+		account_id: post.account_id
+	}
+
+	if(post.video && post.video.url){
+		data.video = {
+			url: post.video.url,
+			thumb: post.getVideoThumb()
+		}
+	}
+
+	if(post.images.length != 0){
+		data.image = [];
+		for(let i of post.images){
+			data.image.push({
+				url: i.url,
+				id: i._id
+			})
+		}
+	}
+
+	return data;
+}
+
+function mapAuthorToPost (post) {
+	return new Promise( async (resolve, reject) => {
+		try{
+			const data = await Account.findOne({_id: post.account_id});
+			// console.log(data);
+			const author = {
+				id: data._id,
+				username: data.name,
+				avatar: data.getAvatar(),
+			}
+			const newPost = {...post, author: author, account_id: undefined};
+			resolve(newPost);
+		}catch (err){
+			reject(err);
+		}
+	})
+}
+
+async function countComment(post){
+	return new Promise( async (resolve, reject) => {
+		try{
+			const data = await Comment.find({post_id: post.id}).countDocuments();
+			resolve(data);
+		}catch (err){
+			reject(err);
+		}
+	})
+}
+
+function isValidCoordinates(latitude, longitude) {
+	const floatNumReg = /^-?\d+(\.\d+)?$/;
+	
+	if(!floatNumReg.test(latitude) || !floatNumReg.test(longitude)) return false;
+
+	const lat = parseFloat(latitude);
+	const lng = parseFloat(longitude);
+
+	if(lat < -90 || lat > 90) return false;
+
+	if(lng < -180 || lng > 180) return false;
+
+	return true;
+}

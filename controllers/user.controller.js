@@ -52,8 +52,8 @@ router.post('/change_info_after_signup', uploadAvatar, authMdw.authToken, async 
 		id: account._id,
 		username: account.name,
 		phonenumber: account.phoneNumber,
-		created: account.createdTime.getTime(),
-		avatar: account.avatar
+		created: account.createdTime.getTime().toString(),
+		avatar: account.getAvatar()
 	});
 });
 
@@ -121,7 +121,7 @@ router.post('/set_user_info', uploadAvatarOrCoverImage, authMdw.authToken, async
 		code: '1000',
 		message: 'OK',
 		data: {
-			avatar: account.avatar != undefined ? account.avatar.url : '',
+			avatar: account.getAvatar(),
 			cover_image: account.coverImage != undefined ? account.coverImage.url : '',
 			username: account.name,
 			link: account.link,

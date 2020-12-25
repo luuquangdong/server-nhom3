@@ -57,7 +57,7 @@ router.post('/login', async (req, resp) => {
 			id: account._id,
 			username: account.username,
 			token: token,
-			avatar: account.avatar === undefined ? account.avatar.url : account.getDefaultAvatar()
+			avatar: account.getAvatar()
 		}
 	});
 });
@@ -110,8 +110,8 @@ router.post('/logout', async (req, resp)=>{
 	try{
 		let payload = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
 		let account = await Account.findOne({_id: payload.userId});
-		if(account === null){
-			return resp.json(resCode.get(9998));
+		if(account == null){
+			return resp.json(resCode.get(1005));
 		}
 //		account.online = false;
 		account.token = undefined;

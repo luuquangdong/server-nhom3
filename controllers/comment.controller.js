@@ -7,11 +7,21 @@ const Post = require('../models/post.model');
 const Comment = require('../models/comment.model');
 const FriendBlock = require('../models/friendblock.model');
 
+const {isValidId, isNumber} = require('../common/func');
+
 router.post('/set_comment', async (req, resp) => {
 	
-	const {id, comment, index, count=0} = req.query;
+	const {id, comment} = req.query;
+	var {index, count} = req.query;
+	const {account} = req;
 
-	if(!id || !comment) return response(resp, 1002);
+	if(index === undefined || !count || !id || !comment) return response(resp, 1002);
+
+	index = parseInt(index);
+	count = parseInt(count);
+
+	if(!isNumber(index) || !isNumber(count) || index < 0 || count < 1) 
+		return response(resp, 1004);
 
 	// kiểm tra khóa tài khoản ng dùng
 	if(req.account.isBlock){
@@ -28,24 +38,23 @@ router.post('/set_comment', async (req, resp) => {
 		});
 	}
 
-	if(req.query.id.length != 24){ // độ dài id phải là 24
+	if(!isValidId(id)){ // độ dài id phải là 24
 		return resp.json({code:'1004', message: "Parameter value is invalid"});
 	}
 	try{
-		let tmp = await Promise.all([
-			Post.findOne({_id: req.query.id}),	// lấy ra post
-			FriendBlock.find({accountDoBlock_id: req.account._id}) // lấy danh sách ng bị mk chặn
-		]);
+		let post = await Post.findOne({_id: id});	// lấy ra post
+
+		if(!post) response(resp, 1004);
 
 		// kiểm tra bài viết bị khóa
-		if(tmp[0].banned){
-			if(tmp[0].banned == "1"){
+		if(post.banned){
+			if(post.banned == "1"){
 				return resp.json({
 					code: '1011',
 					message: "Could not public this post"
 				});
 			}
-			if(tmp[0].banned == "2"){
+			if(post.banned == "2"){
 				return resp.json({
 					code: '1012',
 					message: "Limited access"
@@ -53,46 +62,59 @@ router.post('/set_comment', async (req, resp) => {
 			}
 		}
 
-		let tmp2 = await Promise.all([
-				FriendBlock.find({ /* tìm xem mình có bị chủ bài viết chặn ko */
-					accountDoBlock_id: tmp[0].account_id, 
-					blockedUser_id: req.account._id}),
-				Comment.find({ post_id: req.query.id}) /* lấy comment*/
-					.sort({'_id': -1})
-					.skip( parseInt(index) )
-					.limit( parseInt(count) )
-			]);
+		let isBlock = await FriendBlock.findOne({ /* tìm xem mình có bị chủ bài viết chặn ko */
+			accountDoBlock_id: post.account_id, 
+			blockedUser_id: req.account._id}
+		);
+				
 		// kiểm tra mk bị chủ bài viết chặn
-		if(tmp2[0].length != 0){
+		if(isBlock){
 			return resp.json({
-				code: '1009',
-				message: "Not access"
+				code: '1000',
+				message: "OK",
+				is_blocked: "1" 
 			});
 		}
 
-		if(count == 0) tmp2[1] = [];
-		tmp2[1].pop();
-		// lọc danh sách bình luận chặn nhau
-		let cmtRes = tmp2[1].filter(comment => !tmp[1].includes(comment.userComment_id));// lấy ra comment có userComment_id không có trong ds chặn của mk
+		// tạo danh sách blockId
+		const [mikChan, chanMik] = await Promise.all([
+			FriendBlock.find({accountDoBlock_id: account._id}), 
+			FriendBlock.find({blockedUser_id: account._id})
+		])
 
-		// lấy ra thông tin người comment
-		let cmterIds = cmtRes.map(cmt => cmt.userComment_id);
+		const userIdsBlocked = [];
+		for(let item of mikChan){ // nhung thang mk chan
+			userIdsBlocked.push(item.blockedUser_id);
+		}
+		for(let item of chanMik) { // nhung thang chan mk
+			userIdsBlocked.push(item.accountDoBlock_id);
+		}
 
-		let cmters = await Account.find({ _id: {$in: cmterIds} });
-		
 		// lưu comment
 		let myCmt = await new Comment({
 			post_id: req.query.id,
 			userComment_id: req.account._id,
-			content: req.query.comment})
+			content: req.query.comment
+		})
 			.save();
-		cmters.unshift(req.account);
-		cmtRes.unshift(myCmt);
+
+		// lấy comment
+		const comments = await Comment.find({
+			post_id: id,
+			userComment_id: {$nin: userIdsBlocked}
+		})
+			.skip(index)
+			.limit(count);
+
+		// lấy ra thông tin người comment
+		let cmterIds = comments.map(cmt => cmt.userComment_id);
+
+		let cmters = await Account.find({ _id: {$in: cmterIds} });
 
 		resp.json({
 			code: '1000',
 			message: "OK",
-			data: commentMapper(cmtRes, cmters)
+			data: commentMapper(comments, cmters)
 		});
 	} catch (err){
 		console.log(err);
@@ -109,11 +131,11 @@ function commentMapper(cmts, cmters){
 		return {
 			id: cmt._id,
 			comment: cmt.content,
-			created: cmt.createdTime.getTime(),
+			created: cmt.createdTime.getTime().toString(),
 			poster: {
 				id: cmter._id,
 				name: cmter.name,
-				avatar: cmter.avatar.url
+				avatar: cmter.getAvatar()
 			}
 		}
 	});
