@@ -310,6 +310,37 @@ router.post('/get_list_posts', authMdw.authToken, async (req, resp) => {
 	}
 });
 
+router.post('/delete_post', authMdw.authToken, async (req, resp) => {
+	
+	const {id} = req.query;
+	const {account} = req;
+
+	if(!id) return response(resp, 1002);
+	
+	if(!isValidId(id)) return response(resp, 1004);
+
+	// người dùng bị khóa tài khoản
+	if(account.isBlocked) return response(resp, 1009);
+
+	const post = await Post.findOne({_id: id});
+
+	if(!post) return response(resp, 9992);
+
+	// bài viết bị khóa
+	if(post.banned) return response(resp, 9992);
+
+	if(!post.account_id.equals(account._id)) return response(resp, 1009);
+
+	try{
+		await post.deleteOne();
+
+		response(resp, 1000);
+	} catch(err){
+		console.log(err);
+		response(resp, 1001);
+	}
+});
+
 module.exports = router;
 
 function mapPostToData(post, accountId){

@@ -67,8 +67,8 @@ router.post('/set_user_info', uploadAvatarOrCoverImage, authMdw.authToken, async
 	// mô tả hơn 150 kí tự
 	if(description && description.length > 150) return response(resp, 1004);
 
-	// tài khoản đã bị khóa ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	if(account.isBlocked) return resp.json({ ...resCode.get(1000), data: {isBlocked: '1'} });
+	// tài khoản đã bị khóa 
+	if(account.isBlocked) return response(resp, 1009);
 
 	// tên sai định dạng
 	if(username && !isValidName(username)) return response(resp, 1004);

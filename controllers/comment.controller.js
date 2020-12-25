@@ -24,12 +24,7 @@ router.post('/set_comment', async (req, resp) => {
 		return response(resp, 1004);
 
 	// kiểm tra khóa tài khoản ng dùng
-	if(req.account.isBlock){
-		return resp.json({
-			code: '9991',
-			message: "User is blocked"
-		});
-	}
+	if(req.account.isBlock) return response(resp, 1009);
 	// kiểm tra số lượng từ của comment(trống hoặc trên 500 từ)
 	if(req.query.comment.trim().length == 0 || req.query.comment.length > 500){
 		return resp.json({
@@ -44,7 +39,7 @@ router.post('/set_comment', async (req, resp) => {
 	try{
 		let post = await Post.findOne({_id: id});	// lấy ra post
 
-		if(!post) response(resp, 1004);
+		if(!post) response(resp, 9992);
 
 		// kiểm tra bài viết bị khóa
 		if(post.banned){
