@@ -4,6 +4,7 @@ const Comment = require('../models/comment.model');
 const Account = require('../models/account.model');
 const FriendBlock = require('../models/friendblock.model');
 const FriendList = require('../models/friendlist.model');
+const Report = require('../models/report.model');
 
 const cloudinary = require('./cloudinaryConfig');
 const uploadFile = require('../middlewares/uploadFile.middleware');
@@ -339,6 +340,32 @@ router.post('/delete_post', authMdw.authToken, async (req, resp) => {
 		console.log(err);
 		response(resp, 1001);
 	}
+});
+
+router.post('/report_post', authMdw.authToken, async (req, resp) => {
+	const {id, subject, details} = req.query;
+	const {account} = req;
+	if(!id || !subject || !details) return response(resp, 1002);
+
+	if(!isValidId(id)) return response(resp, 1004);
+
+	// nguoi dung da bi khoa tai khoan
+	if(account.isBlocked) return response(resp, 1009);
+
+	const post = await Post.findOne({_id: id});
+	if(post == null) return response(resp, 9992);
+
+	// bai viet da bi khoa
+	if(post.banned) return response(resp, 1010);
+
+	await new Report({
+		reporterId: account._id,
+		postId: id,
+		subject,
+		details
+	}).save();
+
+	response(resp, 1000);
 });
 
 module.exports = router;
