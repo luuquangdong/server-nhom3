@@ -71,16 +71,11 @@ router.post('/signup', async (req, resp) => {
 		return response(resp, 1002);
 	}
 
-	if(!isPhoneNumber(phoneNumber)){
-		return resp.json(resCode.get(1003));
-	}
-
-	if(!isValidPassword(password)){
-		return resp.json(resCode.get(1003));	
+	if(!isPhoneNumber(phoneNumber) || !isValidPassword(password)){
+		return resp.json(resCode.get(1004));
 	}
 
 	// tìm tài khoản ứng với số điện thoại vừa lấy đk
-//	console.log(req.query);
 	let account = await Account.find({phoneNumber: phoneNumber});
 
 	if(account.length == 0){ // tài khoản chửa tồn tại
@@ -194,8 +189,8 @@ router.post('/check_verify_code', async (req, resp) => {
 		
 		// tao token
 		let token = jwt.sign({
-		userId: account._id,
-		phoneNumber: phonenumber,
+			userId: account._id,
+			phoneNumber: phonenumber,
 		}, process.env.TOKEN_SECRET);
 
 		account.token = token;
