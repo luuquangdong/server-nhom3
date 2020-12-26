@@ -13,6 +13,7 @@ const accountSchema = new mongoose.Schema({
 	uuid: String,
 	active: Boolean,
 	createdTime:{ type: Date, default: Date.now },
+	description: String,
 	link: String,
 	city: String,
 	country: String,

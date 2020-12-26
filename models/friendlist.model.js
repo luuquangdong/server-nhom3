@@ -5,7 +5,7 @@ const Account = require('./account.model');
 const friendlistSchema = new mongoose.Schema({
 	user1_id: {type: Schema.Types.ObjectId, ref: Account},
 	user2_id: {type: Schema.Types.ObjectId, ref: Account},
-  createdTime:{ type: Date, default: Date.now },
+  	createdTime:{ type: Date, default: Date.now },
 });
 
 // tạo model
