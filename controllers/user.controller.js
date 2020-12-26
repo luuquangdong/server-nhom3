@@ -1,9 +1,11 @@
 const router = require('express').Router();
 const {response, resCode} = require('../common/response_code');
-const {isValidName, isPhoneNumber} = require('../common/func');
+const {isValidName, isPhoneNumber, isValidId} = require('../common/func');
 
 // import model
 const Account = require('../models/account.model');
+const FriendList = require('../models/friendlist.model');
+const FriendBlock = require('../models/friendblock.model');
 
 // import middleware
 const uploadAvatarOrCoverImage = require('../middlewares/uploadAvatarOrCoverImage.middleware');
@@ -132,5 +134,66 @@ router.post('/set_user_info', uploadAvatarOrCoverImage, authMdw.authToken, async
 		}
 	});
 })
+
+router.post('/get_user_info', authMdw.authToken, async (req, resp) => {
+	const {user_id} = req.query;
+	const {account} = req;
+
+	if(account.isBlocked) return response(resp, 1009);
+
+	var user = null;
+	let isFriend = false;
+	if(user_id){
+		if(!isValidId(user_id)) return response(resp, 1004);
+
+		user = await Account.findOne({_id: user_id});
+
+		if(!user) return response(resp, 9995);
+
+		if(user.isBlocked) return response(resp, 9995);
+
+		const [friend, isBlocked] = await Promise.all([
+			FriendList.findOne({$or: [
+				{user1_id: account._id, user2_id: user_id}, 
+				{user1_id: user_id, user2_id: account._id}
+				]}),
+			FriendBlock.findOne({$or: [
+				{accountDoBlock_id: user_id, blockedUser_id: account._id},
+				{accountDoBlock_id: account._id, blockedUser_id: user_id}
+				]
+			})
+		]);
+
+		if(friend) isFriend = true;
+		if(isBlocked) return response(resp, 9995);
+	}else{
+		user = account;
+	}
+	const friendNum = await FriendList.find({
+		$or: [
+			{user1_id: user._id}, 
+			{user2_id: user._id}
+		]
+	}).countDocuments();
+
+	resp.json({
+		code: "1000",
+		message: "OK",
+		data: {
+			id: user._id,
+			username: user.name,
+			created: user.createdTime.getTime().toString(),
+			description: user.description,
+			avatar: user.getAvatar(),
+			cover_image: user.cover_image ? user.cover_image.url : undefined,
+			link: user.link,
+			address: user.address,
+			city: user.city,
+			country: user.country,
+			listing: friendNum,
+			isFriend: isFriend ? "1" : 0
+		}
+	})
+});
 
 module.exports = router;
