@@ -82,7 +82,7 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 	post.described = req.query.described;
 	post.status = req.query.status;
 	post = await post.save();
-
+	console.log(post);
 	resp.json({
 		code:'1000',
 		message: "OK",
@@ -215,7 +215,7 @@ router.post('/get_list_posts', authMdw.authToken, async (req, resp) => {
 		var postList = null;
 		if(last_id){ // check last_id
 			const co = await Post.findOne({_id: last_id});
-			if(co == null) return response(resp, 1004);
+			if(co == null) return response(resp, 9992);
 
 			var condition = {};
 			if(index > 0) condition._id = { $lt: mongoose.Types.ObjectId(last_id) };

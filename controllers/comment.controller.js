@@ -59,11 +59,12 @@ router.post('/set_comment', async (req, resp) => {
 
 		let isBlock = await FriendBlock.findOne({ /* tìm xem mình có bị chủ bài viết chặn ko */
 			accountDoBlock_id: post.account_id, 
-			blockedUser_id: req.account._id}
-		);
+			blockedUser_id: account._id
+		});
 				
 		// kiểm tra mk bị chủ bài viết chặn
 		if(isBlock){
+			// console.log(isBlock)
 			return resp.json({
 				code: '1000',
 				message: "OK",
@@ -120,6 +121,60 @@ router.post('/set_comment', async (req, resp) => {
 	}
 });
 
+router.post('/get_comment', async (req, resp) => {
+	const {id} = req.query;
+	const {account} = req;
+	var {index, count} = req.query;
+	if(!id || !count || index==undefined) return response(resp, 1002);
+
+	if(!isValidId(id)) return response(resp, 1004);
+
+	if(!isNumber(index) || !isNumber(count)) return response(resp, 1004);
+
+	index = parseInt(index);
+	count = parseInt(count);
+	if(index < 0 || count < 1) return response(resp, 1004);
+
+	if(account.isBlock) return response(resp, 1009);
+
+	//load post, block list
+	const [post, mikChan, chanMik] = await Promise.all([
+		Post.findOne({_id: id}),
+		FriendBlock.find({accountDoBlock_id: account._id}), 
+		FriendBlock.find({blockedUser_id: account._id})
+	]);
+
+	if(post == null) return response(resp, 9992);
+
+	if(post.banned) return response(resp, 1010);
+
+	const userIdsBlocked = [];
+	for(let item of mikChan){ // nhung thang mk chan
+		userIdsBlocked.push(item.blockedUser_id);
+	}
+	for(let item of chanMik) { // nhung thang chan mk
+		userIdsBlocked.push(item.accountDoBlock_id);
+	}
+
+	for(let userIdBlocked of userIdsBlocked){ // kiểm tra bị chủ bài post chặn
+		if(userIdBlocked.equals(post.account_id)){
+			return resp.json({...resCode.get(1000), is_blocked: '1'});
+		}
+	}
+
+	const comments = await Comment.find({
+		post_id: post._id,
+		userComment_id: {$nin: userIdsBlocked}
+	})	.skip(index)
+		.limit(count)
+		.populate('userComment_id');
+	
+	resp.json({
+		...resCode.get(1000),
+		data: commentsToData(comments)
+	});
+});
+
 function commentMapper(cmts, cmters){
 	return cmts.map(cmt => {
 		let cmter = cmters.find(cmter => cmter._id.equals(cmt.userComment_id));
@@ -137,3 +192,25 @@ function commentMapper(cmts, cmters){
 }
 
 module.exports = router;
+
+function commentsToData(comments){
+	const data = [];
+	for(let cmt of comments){
+		data.push(commentToData(cmt))
+	}
+	return data;
+}
+
+function commentToData(comment){
+	const commenter = comment.userComment_id;
+	return {
+		id: comment._id,
+		comment: comment.content,
+		created: comment.createdTime.getTime().toString(),
+		poster: {
+			id: commenter._id,
+			name: commenter.name,
+			avatar: commenter.getAvatar()
+		}
+	}
+}
