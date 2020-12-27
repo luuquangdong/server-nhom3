@@ -175,10 +175,15 @@ router.post('/get_list_suggested_friends', async (req,resp) => {
     {$project: {u: 1}}
   ]);
 
+  let friendBlock = await FriendBlock.find({accountDoBlock_id: requestUserId});
+  let isBlockedByUser = await FriendBlock.find({blockedUser_id: requestUserId});
+  
+
   notSuggestedList = friendList.map(friend => (friend.u).toString());
   // thieu nguoi dung bi block can bo sung
   notSuggestedList.push(requestUserId);
-
+  friendBlock.map((friendBlocked) => notSuggestedList.push(friendBlocked.blockedUser_id));
+  isBlockedByUser.map((friendBlocked) => notSuggestedList.push(friendBlocked.blockedUser_id));
 
   suggestedFriends = await Account.find( {_id: {$nin: notSuggestedList }}).skip(parseInt(index)).limit(parseInt(count));
   console.log(suggestedFriends);
@@ -298,6 +303,14 @@ router.post('/get_requested_friends', async (req, resp) => {
 
   let accountSendRequest = await FriendRequest.find({userGetRequest_id: accountGetRequestId}).skip(parseInt(index)).limit(parseInt(count));
   let requestData = await Promise.all(accountSendRequest.map(mapUserInfo));
+
+   if (requestData.length === 0) {
+    return resp.json({
+      code: "9994",
+      message: 'no data or end of list data',
+    })
+   }
+
   resp.json({
     code: '1000',
     message: 'OK',
@@ -352,7 +365,7 @@ router.post('/set_request_friend', async (req, resp) => {
       code: '1000',
       message: 'OK',
       data: {
-        requested_friends: requested_friends - 1,
+        requested_friends: (requested_friends - 1) + '',
       }
     });
     return;
@@ -370,7 +383,7 @@ router.post('/set_request_friend', async (req, resp) => {
       code: "1000",
       message: 'OK',
       data: {
-        requested_friends: requested_friends + 1,
+        requested_friends: (requested_friends + 1) + '',
       },
     });
   } else {
@@ -378,7 +391,7 @@ router.post('/set_request_friend', async (req, resp) => {
       code: "9994",
       message: 'no data or end of list data',
       data: {
-        requested_friends: requested_friends
+        requested_friends: requested_friends + ''
       },
     })
   }
@@ -482,7 +495,7 @@ async function mapSuggestedFriends(requestAccountId, friend){
     user_id: friend._id,
     username: friend.name,
     avatar: friend.avatar.url,
-    same_friends: countSameFriend,
+    same_friends: countSameFriend + '',
 	}
 }
 
@@ -507,8 +520,8 @@ async function mapFriendUserList(friend){
     id: friendOfAccount._id,
     username: friendOfAccount.name,
     avatar: friendOfAccount.avatar.url,
-    same_friends: countSameFriend,
-    created: friend.createdTime,
+    same_friends: countSameFriend + '',
+    created: Date.parse(friend.createdTime) + '',
 	}
 }
 
@@ -534,8 +547,8 @@ async function mapUserInfo(request){
     id: accountSendRequest._id,
     username: accountSendRequest.name,
     avatar: accountSendRequest.avatar.url,
-    same_friends: countSameFriend,
-    created: request.createdTime,
+    same_friends: countSameFriend + "",
+    created: Date.parse(request.createdTime) + '',
 	}
 }
 

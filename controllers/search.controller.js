@@ -102,14 +102,14 @@ router.post('/get_saved_search', async (req, resp) => {
 			return {
 				id: savedSearch._id,
 				keyword: savedSearch.keyword,
-				created: savedSearch.CreatedTime,
+				created: Date.parse(savedSearch.createdTime) + '',
 			}
 		});
 
 		return resp.json({
 			code: '1000',
 			message: 'OK',
-			data: searchList,
+			data: searchListData,
 		});
 	} else {
 		return resp.json({
@@ -122,7 +122,7 @@ router.post('/get_saved_search', async (req, resp) => {
 router.post('/search', async (req, resp) => {
 	let token = req.query.token;
 	let keyword = req.query.keyword;
-	let user_id = req.query.user_id;
+	//let user_id = req.query.user_id;
 	let index = req.query.index;
 	let count = req.query.count;
 	let payload = jwt.verify(token, process.env.TOKEN_SECRET);
@@ -131,7 +131,6 @@ router.post('/search', async (req, resp) => {
 	// khong du tham so
 	if (token === undefined
 		|| keyword == undefined
-		|| user_id == undefined
 		|| index == undefined
 		|| count == undefined
 	) {
@@ -146,14 +145,6 @@ router.post('/search', async (req, resp) => {
 		resp.json({
 			code: '1003',
 			message: 'parameter type is invalid',
-		});
-		return;
-	}
-	// gia tri tham so khong hop le
-	if (user_id != mainAccountId) {
-		resp.json({
-			code: '1004',
-			message: 'parameter value is invalid',
 		});
 		return;
 	}
@@ -199,8 +190,8 @@ async function mapPostData(post) {
 			thumb: '',
 			url: '',
 		},
-		like: likeCount,
-		comment: commentCount,
+		like: likeCount + '',
+		comment: commentCount + "",
 		is_liked: is_liked,
 		author: {
 			id: author._id,
