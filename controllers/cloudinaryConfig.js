@@ -36,8 +36,8 @@ module.exports.uploads = (file) => {
 module.exports.remove = (publicId) => {
 	try{
 		cloudinary.uploader.destroy(publicId, (result) => {
-			//console.log(result);
-			console.log('removed old avatar');
+			// console.log(result);
+			console.log('remove successed');
 		});
 	} catch(err){
 		console.log(err);

@@ -169,6 +169,8 @@ router.post('/get_comment', async (req, resp) => {
 		.limit(count)
 		.populate('userComment_id');
 	
+	if(comments.length === 0) return response(resp, 9994);
+
 	resp.json({
 		...resCode.get(1000),
 		data: commentsToData(comments)

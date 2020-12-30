@@ -82,7 +82,7 @@ router.post('/add_post',uploadFile, authMdw.authToken , async (req, resp) => {
 	post.described = req.query.described;
 	post.status = req.query.status;
 	post = await post.save();
-	console.log(post);
+	// console.log(post);
 	resp.json({
 		code:'1000',
 		message: "OK",
@@ -119,7 +119,7 @@ router.post('/like', authMdw.authToken, async (req, resp) => {
 	resp.json({
 		code: '1000',
 		message: "OK",
-		data: { like: post.userLike_id.length }
+		data: { like: post.userLike_id.length.toString() }
 	});
 });
 
@@ -334,6 +334,20 @@ router.post('/delete_post', authMdw.authToken, async (req, resp) => {
 
 	try{
 		await post.deleteOne();
+		
+		try{ // xoa ảnh và video của post
+			if(post.images.length > 0){
+				for(image of post.images){
+					cloudinary.remove(image.publicId);
+				}
+			}
+
+			if(post.video && post.video.publicId) cloudinary.remove(post.video.publicId);
+		} catch (err){
+			console.log(err);
+		}
+		// xóa comment
+		Comment.deleteMany({post_id: post._id}).catch(err => console.log(err));
 
 		response(resp, 1000);
 	} catch(err){
