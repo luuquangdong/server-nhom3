@@ -1,4 +1,24 @@
 # API mạng xã hội thu nhỏ
+## Hướng dẫn sử dụng
+Để chạy được project thì cần tạo file .env đặt trong thư mục server-nhom3 với nội dung như sau:
+```
+TOKEN_SECRET=<secret>
+
+# for connecting to cloud
+CLOUD_NAME=<cloud name>
+API_KEY=<api key>
+API_SECRET=<api secret>
+
+# for connecting to mongodb
+MONGODB_URL=mongodb://localhost/<db name>
+```
+Giá trị của CLOUD_NAME, API_KEY, API_SECRET thì đăng ký tài khoản trên cloudinary rồi gán giá trị tương ứng \
+Project cần cài thêm MongoDB, download tại [đây](https://www.mongodb.com/try/download/community), rồi sửa \<db name\> trên MONGODB_URL tương ứng với db mà bạn muốn tạo
+
+Đường dẫn của mỗi api sẽ có tiền tố it4788 ở phía trước, ví dụ muốn gọi API signup thì url đầy đủ sẽ là: http://localhost/it4788/signup \
+Các param của mỗi API các bạn có thể tham khảo tại [đây](https://drive.google.com/drive/folders/1qdABrUqQXWX-WbbrkqbRVquMbVKz5J5Z?usp=share_link)
+
+---
 ### Danh sách api đã hoàn thành:
 1. signup
 2. login
