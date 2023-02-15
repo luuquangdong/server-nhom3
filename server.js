@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 8888;
 
+const cors = require('cors');
+
 //load biến môi trường từ file .env
 require('dotenv').config();
 
@@ -25,6 +27,7 @@ const userController = require('./controllers/user.controller');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
 app.use('/it4788', checkDBConnection);
 app.use('/it4788', accountController);
